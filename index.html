@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rysu | Sosyal Medya</title>
+    <title>Rysu | Hızlı Sohbet</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
     <style>
         :root {
             --bg: #313338; --sidebar: #2b2d31; --dark: #1e1f22;
@@ -11,192 +14,188 @@
         }
         body { margin: 0; font-family: sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
         
-        /* Auth Ekranı */
-        #auth-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .auth-box { background: #1e1f22; padding: 32px; border-radius: 8px; width: 400px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .auth-box input { width: 90%; padding: 12px; margin: 10px 0; background: var(--input); border: none; color: white; border-radius: 4px; }
-        .auth-box button { background: var(--accent); color: white; border: none; padding: 12px; width: 96%; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        /* KAYIT EKRANI */
+        #register-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .register-box { background: #1e1f22; padding: 40px; border-radius: 8px; width: 350px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+        .register-box h2 { margin-bottom: 20px; }
         
-        /* Profil Resmi Seçici */
-        .pfp-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
-        .pfp-option { width: 45px; height: 45px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
-        .pfp-option.selected { border-color: var(--accent); transform: scale(1.1); }
+        /* Profil Resmi Yükleme Alanı */
+        #pfp-preview { width: 100px; height: 100px; border-radius: 50%; background: var(--accent); margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 3px solid var(--accent); cursor: pointer; }
+        #pfp-preview img { width: 100%; height: 100%; object-fit: cover; }
+        #file-input { display: none; }
 
-        /* Ana Uygulama */
+        input[type="text"] { width: 90%; padding: 12px; margin: 10px 0; background: var(--input); border: none; color: white; border-radius: 4px; outline: none; }
+        .btn-start { background: var(--accent); color: white; border: none; padding: 12px; width: 96%; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        
+        /* ANA UYGULAMA */
         #app { display: none; width: 100%; height: 100%; }
-        .sidebar { width: 260px; background: var(--sidebar); display: flex; flex-direction: column; }
+        .sidebar { width: 260px; background: var(--sidebar); display: flex; flex-direction: column; flex-shrink: 0; }
         .chat-area { flex: 1; display: flex; flex-direction: column; }
-        .messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .msg-bubble { background: #383a40; padding: 10px; border-radius: 8px; max-width: 80%; }
+        .messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        
+        /* Mesaj Baloncuğu */
+        .msg { display: flex; gap: 10px; align-items: flex-start; }
+        .msg img { width: 35px; height: 35px; border-radius: 50%; flex-shrink: 0; }
+        .msg-content { background: var(--input); padding: 8px 12px; border-radius: 8px; font-size: 14px; position: relative; }
+        .msg-content b { font-size: 12px; color: var(--accent); display: block; margin-bottom: 3px; }
+
         .input-area { padding: 20px; background: var(--bg); }
         .input-area input { width: 100%; background: var(--input); border: none; padding: 15px; color: white; border-radius: 8px; outline: none; }
+        
+        #user-bar { padding: 10px; background: #232428; display: flex; align-items: center; gap: 10px; border-top: 1px solid #202225; }
+        #user-bar img { width: 32px; height: 32px; border-radius: 50%; }
+
+        @media (max-width: 600px) { .sidebar { display: none; } }
     </style>
 </head>
 <body>
 
-    <div id="auth-screen">
-        <div class="auth-box" id="register-box">
-            <h2>Rysu'ya Katıl</h2>
-            <div class="pfp-selector" id="pfp-list">
-                </div>
-            <input type="text" id="reg-username" placeholder="Kullanıcı Adı">
-            <input type="email" id="reg-email" placeholder="E-posta">
-            <input type="password" id="reg-pass" placeholder="Şifre">
-            <button id="btn-register">Kayıt Ol</button>
-            <p style="cursor:pointer; font-size:14px;" id="to-login">Zaten hesabın var mı? Giriş yap</p>
-        </div>
-        <div class="auth-box" id="login-box" style="display:none">
-            <h2>Tekrar Hoş Geldin!</h2>
-            <input type="email" id="log-email" placeholder="E-posta">
-            <input type="password" id="log-pass" placeholder="Şifre">
-            <button id="btn-login">Giriş Yap</button>
-            <p style="cursor:pointer; font-size:14px;" id="to-register">Hesap oluştur</p>
+    <div id="register-screen">
+        <div class="register-box">
+            <h2>Rysu'ya Hoş Geldin</h2>
+            <div id="pfp-preview" onclick="document.getElementById('file-input').click()">
+                <span id="pfp-text">Foto Seç</span>
+                <img id="pfp-img" style="display:none">
+            </div>
+            <input type="file" id="file-input" accept="image/*">
+            <input type="text" id="username-input" placeholder="Kullanıcı adın ne olsun?">
+            <button class="btn-start" onclick="saveUser()">Başla</button>
         </div>
     </div>
 
     <div id="app">
         <div class="sidebar">
-            <div style="padding: 20px; font-weight: bold; font-size: 20px; border-bottom: 1px solid #202225;">RYSU</div>
+            <div style="padding: 20px; font-weight: bold; font-size: 22px; color: white;">RYSU</div>
             <div style="padding: 15px; flex: 1;">
-                <p style="font-size: 12px; color: #949ba4; font-weight: bold;">ARKADAŞ EKLE</p>
-                <input type="text" id="friend-input" placeholder="Kullanıcı adı..." style="width: 85%; background: var(--dark); border:none; padding:8px; color:white; border-radius:4px;">
-                <div id="friends-list" style="margin-top: 20px;"></div>
+                <p style="font-size: 11px; color: #949ba4; font-weight: bold; margin-bottom: 10px;">ARKADAŞ EKLE</p>
+                <input type="text" id="add-friend" placeholder="Kullanıcı adı yaz..." style="width: 85%; background: var(--dark); border:none; padding:8px; color:white; border-radius:4px;">
             </div>
-            <div id="user-bar" style="padding: 10px; background: #232428; display:flex; align-items:center; gap:10px;">
-                <img id="my-pfp" src="" style="width:32px; height:32px; border-radius:50%;">
-                <span id="my-username" style="font-weight:bold; font-size:14px;">Yükleniyor...</span>
-                <button id="btn-logout" style="margin-left:auto; background:none; border:none; color:#ed4245; cursor:pointer;">Çıkış</button>
+            <div id="user-bar">
+                <img id="my-bar-pfp" src="">
+                <span id="my-bar-name" style="font-weight:bold; font-size:14px;"></span>
             </div>
         </div>
         <div class="chat-area">
-            <div class="chat-header" style="padding: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.2);"># genel-sohbet</div>
+            <div style="height: 48px; display: flex; align-items: center; padding: 0 16px; border-bottom: 1px solid #26272d; font-weight: bold;"># genel-sohbet</div>
             <div class="messages" id="msg-list"></div>
             <div class="input-area">
-                <input type="text" id="msg-input" placeholder="Mesajınızı gönderin...">
+                <input type="text" id="msg-input" placeholder="Buraya bir şeyler yaz...">
             </div>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getDatabase, ref, set, push, onValue, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-        // Senin verdiğin config
+    <script>
+        // --- FIREBASE BAĞLANTISI ---
         const firebaseConfig = {
             apiKey: "AIzaSyCXca2LRaHFx6iZX9vhfe6lXMS9UY5nO54",
             authDomain: "rysu-server.firebaseapp.com",
             projectId: "rysu-server",
+            databaseURL: "https://rysu-server-default-rtdb.firebaseio.com", // Database URL'ini buraya ekledim
             storageBucket: "rysu-server.firebasestorage.app",
             messagingSenderId: "253844771451",
-            appId: "1:253844771451:web:bd370ae5a93eae66fcc8de",
-            measurementId: "G-T632DDDX6L"
+            appId: "1:253844771451:web:bd370ae5a93eae66fcc8de"
         };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getDatabase(app);
+        let myUserData = JSON.parse(localStorage.getItem('rysu_user'));
 
-        let selectedPfp = "https://api.dicebear.com/7.x/adventurer/svg?seed=Felix";
-
-        // Profil Resmi Seçeneklerini Oluştur
-        const pfpList = document.getElementById('pfp-list');
-        ["Felix", "Aneka", "Milo", "Luna"].forEach(seed => {
-            const img = document.createElement('img');
-            img.src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}`;
-            img.className = 'pfp-option';
-            img.onclick = () => {
-                document.querySelectorAll('.pfp-option').forEach(el => el.classList.remove('selected'));
-                img.classList.add('selected');
-                selectedPfp = img.src;
-            };
-            pfpList.appendChild(img);
-        });
-
-        // OTOMATİK GİRİŞ (Auto-Login)
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('app').style.display = 'flex';
-                const userRef = ref(db, 'users/' + user.uid);
-                onValue(userRef, (snapshot) => {
-                    const data = snapshot.val();
-                    if(data) {
-                        document.getElementById('my-username').innerText = data.username;
-                        document.getElementById('my-pfp').src = data.pfp;
-                    }
-                });
-                loadMessages();
-            } else {
-                document.getElementById('auth-screen').style.display = 'flex';
-                document.getElementById('app').style.display = 'none';
+        // Sayfa açıldığında kullanıcı kontrolü
+        window.onload = () => {
+            if (myUserData) {
+                showApp();
             }
-        });
-
-        // KAYIT FONKSİYONU
-        document.getElementById('btn-register').onclick = async () => {
-            const email = document.getElementById('reg-email').value;
-            const pass = document.getElementById('reg-pass').value;
-            const username = document.getElementById('reg-username').value;
-
-            try {
-                const result = await createUserWithEmailAndPassword(auth, email, pass);
-                await set(ref(db, 'users/' + result.user.uid), {
-                    username: username,
-                    pfp: selectedPfp,
-                    email: email
-                });
-            } catch (err) { alert("Hata: " + err.message); }
         };
 
-        // GİRİŞ FONKSİYONU
-        document.getElementById('btn-login').onclick = () => {
-            const email = document.getElementById('log-email').value;
-            const pass = document.getElementById('log-pass').value;
-            signInWithEmailAndPassword(auth, email, pass).catch(err => alert(err.message));
+        // Profil Resmi Yükleme Önizleme
+        document.getElementById('file-input').onchange = function(e) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                const img = document.getElementById('pfp-img');
+                img.src = reader.result;
+                img.style.display = 'block';
+                document.getElementById('pfp-text').style.display = 'none';
+            };
+            reader.readAsDataURL(e.target.files[0]);
         };
 
-        // ÇIKIŞ
-        document.getElementById('btn-logout').onclick = () => signOut(auth);
+        // Kullanıcıyı Kaydet (LocalStorage)
+        function saveUser() {
+            const username = document.getElementById('username-input').value.trim();
+            const pfp = document.getElementById('pfp-img').src;
 
-        // MESAJ GÖNDERME
+            if (username === "" || !pfp) {
+                alert("Lütfen hem adını seç hem de fotoğrafını yükle!");
+                return;
+            }
+
+            const userData = { username: username, pfp: pfp };
+            localStorage.setItem('rysu_user', JSON.stringify(userData));
+            myUserData = userData;
+            
+            // Firebase'e "Ben buradayım" diye kaydet (başkaları bulabilsin diye)
+            db.ref('users/' + username).set(userData);
+            
+            showApp();
+        }
+
+        function showApp() {
+            document.getElementById('register-screen').style.display = 'none';
+            document.getElementById('app').style.display = 'flex';
+            document.getElementById('my-bar-pfp').src = myUserData.pfp;
+            document.getElementById('my-bar-name').innerText = myUserData.username;
+            listenMessages();
+        }
+
+        // Mesaj Gönderme
         document.getElementById('msg-input').onkeypress = (e) => {
-            if(e.key === 'Enter' && e.target.value.trim() !== "") {
-                const msgRef = ref(db, 'messages');
-                push(msgRef, {
-                    sender: document.getElementById('my-username').innerText,
+            if (e.key === 'Enter' && e.target.value.trim() !== "") {
+                db.ref('messages').push({
+                    name: myUserData.username,
+                    pfp: myUserData.pfp,
                     text: e.target.value,
-                    timestamp: Date.now()
+                    time: Date.now()
                 });
                 e.target.value = "";
             }
         };
 
-        // MESAJLARI DİNLE
-        function loadMessages() {
-            const msgRef = ref(db, 'messages');
-            onValue(msgRef, (snapshot) => {
+        // Mesajları Canlı Dinle
+        function listenMessages() {
+            db.ref('messages').limitToLast(50).on('value', (snap) => {
                 const list = document.getElementById('msg-list');
                 list.innerHTML = "";
-                snapshot.forEach(child => {
+                snap.forEach(child => {
                     const data = child.val();
                     const div = document.createElement('div');
-                    div.className = 'msg-bubble';
-                    div.innerHTML = `<small style="color:var(--accent)">${data.sender}</small><br>${data.text}`;
+                    div.className = 'msg';
+                    div.innerHTML = `
+                        <img src="${data.pfp}">
+                        <div class="msg-content">
+                            <b>${data.name}</b>
+                            ${data.text}
+                        </div>
+                    `;
                     list.appendChild(div);
                 });
                 list.scrollTop = list.scrollHeight;
             });
         }
 
-        // Ekranlar Arası Geçiş
-        document.getElementById('to-login').onclick = () => {
-            document.getElementById('register-box').style.display = 'none';
-            document.getElementById('login-box').style.display = 'block';
-        };
-        document.getElementById('to-register').onclick = () => {
-            document.getElementById('login-box').style.display = 'none';
-            document.getElementById('register-box').style.display = 'block';
+        // Arkadaş Ekleme (Şimdilik sadece isim kontrolü)
+        document.getElementById('add-friend').onkeypress = (e) => {
+            if(e.key === 'Enter') {
+                const friendName = e.target.value.trim();
+                db.ref('users/' + friendName).once('value').then(snap => {
+                    if(snap.exists()) {
+                        alert(friendName + " bulundu ve eklendi!");
+                        // Burada arkadaş listesi mantığı geliştirilebilir
+                    } else {
+                        alert("Böyle bir kullanıcı bulunamadı.");
+                    }
+                });
+                e.target.value = "";
+            }
         };
     </script>
 </body>
