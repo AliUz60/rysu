@@ -8,78 +8,46 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <style>
-        :root {
-            --bg: #08080a;
-            --card: #111114;
-            --neon: #00f2ff;
-            --accent: #bc4eff;
-            --text: #ffffff;
-            --dim: #88888b;
-        }
+        :root { --bg: #08080a; --card: #111114; --neon: #00f2ff; --accent: #bc4eff; --text: #ffffff; --dim: #88888b; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
 
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
+        /* --- LOGO --- */
+        .rysu-logo-container { width: 54px; height: 54px; position: relative; margin-bottom: 25px; cursor: pointer; }
+        .logo-hexagon { position: absolute; width: 100%; height: 100%; background: linear-gradient(135deg, var(--neon), var(--accent)); clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 26px; color: #000; transition: 0.4s; }
 
-        /* --- MODERN LOGO --- */
-        .rysu-logo-container {
-            width: 54px; height: 54px; position: relative; margin-bottom: 25px; cursor: pointer;
-        }
-        .logo-hexagon {
-            position: absolute; width: 100%; height: 100%; background: linear-gradient(135deg, var(--neon), var(--accent));
-            clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
-            display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 26px; color: #000;
-            box-shadow: 0 0 30px rgba(0, 242, 255, 0.3); transition: 0.4s;
-        }
-        .rysu-logo-container:hover .logo-hexagon { transform: rotate(15deg) scale(1.1); filter: brightness(1.2); }
-
-        /* --- GENEL MODAL SİSTEMİ (PROMPT YERİNE) --- */
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
-            z-index: 10000; display: none; align-items: center; justify-content: center; animation: fadeIn 0.2s ease;
-        }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        .custom-modal {
-            background: var(--card); border: 1px solid rgba(255,255,255,0.1); padding: 35px; border-radius: 24px;
-            width: 360px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-        .custom-modal h3 { margin-top: 0; color: var(--neon); letter-spacing: 1px; }
-        .custom-modal input {
-            width: 100%; padding: 14px; margin: 20px 0; background: #000; border: 1px solid #222;
-            border-radius: 12px; color: white; outline: none; box-sizing: border-box; transition: 0.3s;
-        }
-        .custom-modal input:focus { border-color: var(--neon); box-shadow: 0 0 10px rgba(0, 242, 255, 0.2); }
+        /* --- MODAL --- */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 10000; display: none; align-items: center; justify-content: center; }
+        .custom-modal { background: var(--card); border: 1px solid rgba(255,255,255,0.1); padding: 35px; border-radius: 24px; width: 360px; text-align: center; }
+        .custom-modal input { width: 100%; padding: 14px; margin: 20px 0; background: #000; border: 1px solid #222; border-radius: 12px; color: white; outline: none; box-sizing: border-box; }
 
         /* --- SIDEBARLAR --- */
         .s-sidebar { width: 80px; background: #040405; display: flex; flex-direction: column; align-items: center; padding-top: 20px; gap: 15px; border-right: 1px solid #111; }
-        .s-btn {
-            width: 52px; height: 52px; background: #111; border-radius: 18px; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: 0.3s; border: 1px solid transparent; font-weight: bold; font-size: 18px;
-        }
-        .s-btn:hover { border-color: var(--neon); border-radius: 12px; background: var(--neon); color: #000; }
+        .s-btn { width: 52px; height: 52px; background: #111; border-radius: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; font-weight: bold; }
+        .s-btn:hover, .s-btn.active { border: 2px solid var(--neon); color: var(--neon); }
 
         .c-sidebar { width: 250px; background: #0c0c0e; border-right: 1px solid #111; display: flex; flex-direction: column; }
-        .header { padding: 25px; border-bottom: 1px solid #111; font-weight: bold; font-size: 18px; display: flex; justify-content: space-between; align-items: center; }
-
-        .c-item { padding: 12px 20px; margin: 4px 12px; border-radius: 10px; cursor: pointer; color: var(--dim); transition: 0.2s; }
+        .header { padding: 25px; border-bottom: 1px solid #111; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        
+        .section-title { padding: 15px 20px 5px; font-size: 11px; color: var(--dim); letter-spacing: 1px; font-weight: bold; }
+        .c-item { padding: 10px 20px; margin: 2px 12px; border-radius: 8px; cursor: pointer; color: var(--dim); transition: 0.2s; display: flex; align-items: center; gap: 10px; }
         .c-item:hover { background: rgba(255,255,255,0.03); color: white; }
-        .c-item.active { background: rgba(0, 242, 255, 0.08); color: var(--neon); font-weight: bold; }
+        .c-item.active { background: rgba(0, 242, 255, 0.1); color: var(--neon); }
+        .status-dot { width: 8px; height: 8px; background: #444; border-radius: 50%; }
+        .status-online { background: #43b581; box-shadow: 0 0 5px #43b581; }
 
-        /* --- CHAT ALANI --- */
+        /* --- CHAT --- */
         .chat-main { flex: 1; display: flex; flex-direction: column; }
-        .msg-list { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
-        .msg { display: flex; gap: 15px; }
-        .msg-pfp { width: 44px; height: 44px; border-radius: 14px; background: #222; flex-shrink: 0; }
-        .msg-bubble { background: rgba(255,255,255,0.02); padding: 14px 18px; border-radius: 0 18px 18px 18px; border: 1px solid rgba(255,255,255,0.03); }
-        .msg-bubble b { color: var(--accent); font-size: 13px; display: block; margin-bottom: 5px; }
-        .img-post { max-width: 400px; border-radius: 15px; margin-top: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid #333; }
+        .msg-list { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .msg { display: flex; gap: 12px; }
+        .msg-pfp { width: 40px; height: 40px; border-radius: 12px; background: #222; }
+        .msg-bubble { background: rgba(255,255,255,0.02); padding: 12px 16px; border-radius: 0 15px 15px 15px; border: 1px solid rgba(255,255,255,0.03); }
+        .msg-bubble b { color: var(--neon); font-size: 13px; display: block; margin-bottom: 4px; }
+        
+        .input-bar { padding: 25px; display: flex; gap: 15px; }
+        .input-box { flex: 1; background: #111; border-radius: 12px; display: flex; padding: 0 15px; border: 1px solid #222; }
+        .input-box input { background: transparent; border: none; color: white; flex: 1; height: 45px; outline: none; }
 
-        .input-bar { padding: 30px; display: flex; gap: 15px; }
-        .input-box { flex: 1; background: #111; border-radius: 15px; display: flex; padding: 0 20px; border: 1px solid #222; }
-        .input-box input { background: transparent; border: none; color: white; flex: 1; height: 50px; outline: none; font-size: 15px; }
-
-        .btn-neon { background: var(--neon); color: #000; border: none; padding: 12px 24px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .btn-neon:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 242, 255, 0.4); }
-
+        .btn-neon { background: var(--neon); color: #000; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; }
         #auth-overlay { position: fixed; inset: 0; background: #000; z-index: 20000; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
@@ -88,50 +56,41 @@
     <div id="auth-overlay">
         <div class="custom-modal">
             <div class="rysu-logo-container" style="margin: 0 auto 20px;"><div class="logo-hexagon">R</div></div>
-            <h2>Sisteme Giriş Yap</h2>
-            <input type="text" id="user-in" placeholder="Kullanıcı adını yaz...">
-            <button class="btn-neon" onclick="doLogin()" style="width:100%">Rysu'yu Başlat</button>
+            <h2>Rysu'ya Hoş Geldin</h2>
+            <input type="text" id="user-in" placeholder="Kullanıcı adın ne olsun?">
+            <button class="btn-neon" onclick="doLogin()" style="width:100%">Başla</button>
         </div>
     </div>
 
     <div id="modal-overlay" class="modal-overlay" onclick="closeM(event)">
-        <div class="custom-modal" id="modal-content">
+        <div class="custom-modal">
             <h3 id="modal-title">Başlık</h3>
-            <p id="modal-desc" style="color:var(--dim); font-size: 13px;"></p>
-            <input type="text" id="modal-input" placeholder="Yazmaya başla...">
-            <div style="display:flex; gap:10px;">
-                <button class="btn-neon" id="modal-confirm-btn" style="flex:1">Tamam</button>
-                <button class="btn-neon" style="background:#222; color:white; flex:1" onclick="closeM(null)">İptal</button>
-            </div>
+            <input type="text" id="modal-input">
+            <button class="btn-neon" id="modal-confirm-btn">Onayla</button>
         </div>
     </div>
 
     <div class="s-sidebar">
-        <div class="rysu-logo-container"><div class="logo-hexagon">R</div></div>
+        <div class="rysu-logo-container" onclick="location.reload()"><div class="logo-hexagon">R</div></div>
         <div id="s-list"></div>
-        <div class="s-btn" onclick="openM('server')" style="color:var(--neon); border-color:rgba(0,242,255,0.2)">+</div>
+        <div class="s-btn" onclick="openM('server')" style="color:var(--neon)">+</div>
     </div>
 
     <div class="c-sidebar">
-        <div class="header">
-            <span id="active-s-name">Global Sunucu</span>
-            <span style="cursor:pointer; color:var(--neon)" onclick="openM('channel')">+</span>
-        </div>
-        <div id="c-list" style="padding-top: 10px;"></div>
+        <div class="header"><span id="active-s-name">Sunucu Seç</span></div>
+        
+        <div class="section-title">KANALLAR <span style="float:right; cursor:pointer" onclick="openM('channel')">+</span></div>
+        <div id="c-list"></div>
+
+        <div class="section-title">ARKADAŞLAR <span style="float:right; cursor:pointer" onclick="openM('friend')">+</span></div>
+        <div id="f-list"></div>
     </div>
 
     <div class="chat-main">
-        <div class="header" style="height: 64px; background: rgba(255,255,255,0.01)">
-            <span id="active-c-name"># genel-sohbet</span>
-        </div>
+        <div class="header"><span id="active-chat-name"># genel</span></div>
         <div class="msg-list" id="m-list"></div>
         <div class="input-bar">
-            <label style="cursor:pointer; font-size: 24px;" title="Dosya/Resim">
-                🖼️<input type="file" id="f-in" style="display:none" onchange="hdlFile(this)">
-            </label>
-            <div class="input-box">
-                <input type="text" id="m-in" placeholder="Buraya bir şeyler karala...">
-            </div>
+            <div class="input-box"><input type="text" id="m-in" placeholder="Mesaj gönder..."></div>
         </div>
     </div>
 
@@ -147,140 +106,91 @@
         const db = firebase.database();
 
         let me = localStorage.getItem('rysu_name');
-        let curS = 'Global';
-        let curC = 'genel';
-        let modalType = '';
+        let curS = 'Global', curC = 'genel', chatPath = 'msgs/Global/genel';
 
-        if(me) document.getElementById('auth-overlay').style.display = 'none';
+        if(me) {
+            document.getElementById('auth-overlay').style.display = 'none';
+            db.ref('users/' + me).set({ status: 'online' });
+        }
 
         function doLogin() {
-            const n = document.getElementById('user-in').value;
+            const n = document.getElementById('user-in').value.trim();
             if(n) { localStorage.setItem('rysu_name', n); location.reload(); }
         }
 
-        /* --- MODERN MODAL KONTROLU --- */
         function openM(type) {
-            modalType = type;
             const overlay = document.getElementById('modal-overlay');
             const title = document.getElementById('modal-title');
-            const desc = document.getElementById('modal-desc');
             const input = document.getElementById('modal-input');
             const btn = document.getElementById('modal-confirm-btn');
-
-            input.value = "";
             overlay.style.display = 'flex';
 
             if(type === 'server') {
                 title.innerText = "Sunucu Oluştur";
-                desc.innerText = "Sunucun için harika bir isim seç.";
-                btn.onclick = () => {
-                    if(input.value) {
-                        db.ref('servers/' + input.value).set({ name: input.value, icon: input.value[0].toUpperCase() });
-                        closeM(null);
-                    }
-                };
-            } else {
+                btn.onclick = () => { db.ref('servers/' + input.value).set({ name: input.value }); closeM(); };
+            } else if(type === 'channel') {
                 title.innerText = "Kanal Oluştur";
-                desc.innerText = "Bu kanalda neler konuşulacak?";
-                btn.onclick = () => {
-                    if(input.value) {
-                        db.ref('channels/' + curS + '/' + input.value).set({ name: input.value });
-                        closeM(null);
-                    }
-                };
+                btn.onclick = () => { db.ref('channels/' + curS + '/' + input.value).set({ name: input.value }); closeM(); };
+            } else {
+                title.innerText = "Arkadaş Ekle";
+                btn.onclick = () => { db.ref('friends/' + me + '/' + input.value).set({ name: input.value }); closeM(); };
             }
-            input.focus();
         }
 
-        function closeM(e) {
-            if(!e || e.target.id === 'modal-overlay') document.getElementById('modal-overlay').style.display = 'none';
-        }
+        function closeM() { document.getElementById('modal-overlay').style.display = 'none'; }
 
-        /* --- SUNUCU & KANAL YÖNETİMİ --- */
+        // Sunucuları ve Arkadaşları Yükle
         db.ref('servers').on('value', snap => {
-            const l = document.getElementById('s-list');
-            l.innerHTML = "";
-            snap.forEach(s => {
-                const d = s.val();
-                l.innerHTML += `<div class="s-btn" onclick="swS('${d.name}')">${d.icon}</div>`;
+            const l = document.getElementById('s-list'); l.innerHTML = "";
+            snap.forEach(s => { l.innerHTML += `<div class="s-btn" onclick="swS('${s.key}')">${s.key[0]}</div>`; });
+        });
+
+        db.ref('friends/' + me).on('value', snap => {
+            const l = document.getElementById('f-list'); l.innerHTML = "";
+            snap.forEach(f => {
+                l.innerHTML += `<div class="c-item" onclick="swDM('${f.key}')"><div class="status-dot status-online"></div> ${f.key}</div>`;
             });
         });
 
         function swS(name) {
-            curS = name;
-            document.getElementById('active-s-name').innerText = name;
-            loadC();
-        }
-
-        function loadC() {
-            db.ref('channels/' + curS).on('value', snap => {
-                const l = document.getElementById('c-list');
-                l.innerHTML = "";
-                snap.forEach(c => {
-                    const d = c.val();
-                    l.innerHTML += `<div class="c-item ${curC === d.name ? 'active' : ''}" onclick="swC('${d.name}')"># ${d.name}</div>`;
-                });
+            curS = name; document.getElementById('active-s-name').innerText = name;
+            db.ref('channels/' + name).on('value', snap => {
+                const l = document.getElementById('c-list'); l.innerHTML = "";
+                snap.forEach(c => { l.innerHTML += `<div class="c-item" onclick="swC('${c.key}')"># ${c.key}</div>`; });
             });
         }
 
         function swC(name) {
-            curC = name;
-            document.getElementById('active-c-name').innerText = "# " + name;
-            loadC(); // Active class update
+            curC = name; chatPath = `msgs/${curS}/${name}`;
+            document.getElementById('active-chat-name').innerText = "# " + name;
             listenM();
         }
 
-        /* --- DOSYA & MESAJ --- */
-        function hdlFile(input) {
-            const f = input.files[0];
-            if(!f) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const isImg = f.type.startsWith('image/');
-                sendM(e.target.result, isImg ? 'img' : 'file', f.name);
-            };
-            reader.readAsDataURL(f);
-        }
-
-        function sendM(val, type = 'text', fName = '') {
-            db.ref('msgs/' + curS + '/' + curC).push({
-                user: me, val: val, type: type, fName: fName, time: Date.now()
-            });
+        function swDM(friend) {
+            const dmID = [me, friend].sort().join('_');
+            chatPath = `dms/${dmID}`;
+            document.getElementById('active-chat-name').innerText = "@ " + friend;
+            listenM();
         }
 
         document.getElementById('m-in').onkeypress = (e) => {
-            if(e.key === 'Enter' && e.target.value.trim() !== "") {
-                sendM(e.target.value);
+            if(e.key === 'Enter' && e.target.value) {
+                db.ref(chatPath).push({ user: me, val: e.target.value, time: Date.now() });
                 e.target.value = "";
             }
         };
 
         function listenM() {
-            db.ref('msgs/' + curS + '/' + curC).on('value', snap => {
-                const l = document.getElementById('m-list');
-                l.innerHTML = "";
+            db.ref(chatPath).off();
+            db.ref(chatPath).on('value', snap => {
+                const l = document.getElementById('m-list'); l.innerHTML = "";
                 snap.forEach(m => {
                     const d = m.val();
-                    let body = d.val;
-                    if(d.type === 'img') body = `<img src="${d.val}" class="img-post">`;
-                    if(d.type === 'file') body = `<a href="${d.val}" download="${d.fName}" style="color:var(--neon)">📎 ${d.fName}</a>`;
-
-                    l.innerHTML += `
-                        <div class="msg">
-                            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=${d.user}" class="msg-pfp">
-                            <div class="msg-bubble">
-                                <b>${d.user}</b>
-                                ${body}
-                            </div>
-                        </div>
-                    `;
+                    l.innerHTML += `<div class="msg"><div class="msg-pfp"></div><div class="msg-bubble"><b>${d.user}</b>${d.val}</div></div>`;
                 });
                 l.scrollTop = l.scrollHeight;
             });
         }
-
-        loadC();
-        listenM();
     </script>
 </body>
 </html>
