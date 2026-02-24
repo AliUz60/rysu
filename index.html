@@ -3,248 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ryu | Sohbet</title>
+    <title>Rysu | Sosyal Medya</title>
     <style>
-        /* CSS - Görünüm Ayarları */
         :root {
-            --bg-darkest: #1e1f22;   /* Sunucu listesi */
-            --bg-sidebar: #2b2d31;   /* Kanal listesi */
-            --bg-chat: #313338;      /* Mesaj alanı */
-            --text-main: #dbdee1;
-            --text-muted: #949ba4;
-            --accent: #5865f2;       /* Ryu/Discord Mavisi */
-            --input-bg: #383a40;
+            --bg: #313338; --sidebar: #2b2d31; --dark: #1e1f22;
+            --accent: #5865f2; --text: #dbdee1; --input: #383a40;
         }
+        body { margin: 0; font-family: sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
+        
+        /* Auth Ekranı */
+        #auth-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .auth-box { background: #1e1f22; padding: 32px; border-radius: 8px; width: 400px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .auth-box input { width: 90%; padding: 12px; margin: 10px 0; background: var(--input); border: none; color: white; border-radius: 4px; }
+        .auth-box button { background: var(--accent); color: white; border: none; padding: 12px; width: 96%; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        
+        /* Profil Resmi Seçici */
+        .pfp-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
+        .pfp-option { width: 45px; height: 45px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
+        .pfp-option.selected { border-color: var(--accent); transform: scale(1.1); }
 
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            font-family: 'gg sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: var(--bg-chat);
-            color: var(--text-main);
-            display: flex;
-            overflow: hidden;
-        }
-
-        /* Sol Sunucu Barı */
-        .servers {
-            width: 72px;
-            background-color: var(--bg-darkest);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 12px;
-            flex-shrink: 0;
-        }
-
-        .server-icon {
-            width: 48px;
-            height: 48px;
-            background-color: var(--bg-chat);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: 0.2s;
-            color: white;
-            font-weight: bold;
-        }
-
-        .server-icon:hover {
-            border-radius: 15px;
-            background-color: var(--accent);
-        }
-
-        .server-icon.active {
-            border-radius: 15px;
-            background-color: var(--accent);
-        }
-
-        /* Yan Menü (Kanallar) */
-        .sidebar {
-            width: 240px;
-            background-color: var(--bg-sidebar);
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-        }
-
-        .sidebar-header {
-            height: 48px;
-            padding: 0 16px;
-            display: flex;
-            align-items: center;
-            font-weight: bold;
-            box-shadow: 0 1px 0 rgba(0,0,0,0.2);
-            font-size: 16px;
-        }
-
-        .channel-list {
-            padding: 10px 8px;
-            flex: 1;
-        }
-
-        .channel-item {
-            padding: 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            margin-bottom: 2px;
-        }
-
-        .channel-item:hover {
-            background-color: #3f4147;
-            color: var(--text-main);
-        }
-
-        .channel-item.active {
-            background-color: #3f4147;
-            color: white;
-        }
-
-        /* Ana Sohbet Alanı */
-        .chat-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chat-header {
-            height: 48px;
-            padding: 0 16px;
-            display: flex;
-            align-items: center;
-            box-shadow: 0 1px 0 rgba(0,0,0,0.2);
-            font-weight: bold;
-        }
-
-        .messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .message {
-            display: flex;
-            gap: 15px;
-        }
-
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: #5865f2;
-            flex-shrink: 0;
-        }
-
-        .msg-info b { color: white; margin-right: 5px; }
-        .msg-info span { font-size: 12px; color: var(--text-muted); }
-        .msg-text { margin-top: 4px; line-height: 1.4; }
-
-        /* Mesaj Giriş Kutusu */
-        .input-area {
-            padding: 0 20px 24px 20px;
-        }
-
-        .input-container {
-            background-color: var(--input-bg);
-            border-radius: 8px;
-            padding: 11px 16px;
-            display: flex;
-        }
-
-        input {
-            width: 100%;
-            background: transparent;
-            border: none;
-            color: var(--text-main);
-            outline: none;
-            font-size: 16px;
-        }
-
-        /* Mobilde yan menüleri gizle */
-        @media (max-width: 768px) {
-            .servers, .sidebar { display: none; }
-        }
+        /* Ana Uygulama */
+        #app { display: none; width: 100%; height: 100%; }
+        .sidebar { width: 260px; background: var(--sidebar); display: flex; flex-direction: column; }
+        .chat-area { flex: 1; display: flex; flex-direction: column; }
+        .messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .msg-bubble { background: #383a40; padding: 10px; border-radius: 8px; max-width: 80%; }
+        .input-area { padding: 20px; background: var(--bg); }
+        .input-area input { width: 100%; background: var(--input); border: none; padding: 15px; color: white; border-radius: 8px; outline: none; }
     </style>
 </head>
 <body>
 
-    <div class="servers">
-        <div class="server-icon active" title="Ryu">R</div>
-        <div style="width: 32px; height: 2px; background: #35363c; margin-bottom: 8px;"></div>
-        <div class="server-icon">+</div>
-    </div>
-
-    <div class="sidebar">
-        <div class="sidebar-header">RYU TOPLULUĞU</div>
-        <div class="channel-list">
-            <div class="channel-item active"># genel-sohbet</div>
-            <div class="channel-item"># duyurular</div>
-            <div class="channel-item"># oyun-odası</div>
-        </div>
-    </div>
-
-    <div class="chat-area">
-        <div class="chat-header"># genel-sohbet</div>
-        
-        <div class="messages" id="messageContainer">
-            <div class="message">
-                <div class="avatar" style="background-color: #ed4245;"></div>
-                <div class="msg-info">
-                    <b>Ryu Bot</b> <span>Bugün 16:00</span>
-                    <div class="msg-text">Selam! Ryu'ya hoş geldin. Burası senin yeni dünyan. Alt taraftan mesaj yazarak başlayabilirsin!</div>
+    <div id="auth-screen">
+        <div class="auth-box" id="register-box">
+            <h2>Rysu'ya Katıl</h2>
+            <div class="pfp-selector" id="pfp-list">
                 </div>
+            <input type="text" id="reg-username" placeholder="Kullanıcı Adı">
+            <input type="email" id="reg-email" placeholder="E-posta">
+            <input type="password" id="reg-pass" placeholder="Şifre">
+            <button id="btn-register">Kayıt Ol</button>
+            <p style="cursor:pointer; font-size:14px;" id="to-login">Zaten hesabın var mı? Giriş yap</p>
+        </div>
+        <div class="auth-box" id="login-box" style="display:none">
+            <h2>Tekrar Hoş Geldin!</h2>
+            <input type="email" id="log-email" placeholder="E-posta">
+            <input type="password" id="log-pass" placeholder="Şifre">
+            <button id="btn-login">Giriş Yap</button>
+            <p style="cursor:pointer; font-size:14px;" id="to-register">Hesap oluştur</p>
+        </div>
+    </div>
+
+    <div id="app">
+        <div class="sidebar">
+            <div style="padding: 20px; font-weight: bold; font-size: 20px; border-bottom: 1px solid #202225;">RYSU</div>
+            <div style="padding: 15px; flex: 1;">
+                <p style="font-size: 12px; color: #949ba4; font-weight: bold;">ARKADAŞ EKLE</p>
+                <input type="text" id="friend-input" placeholder="Kullanıcı adı..." style="width: 85%; background: var(--dark); border:none; padding:8px; color:white; border-radius:4px;">
+                <div id="friends-list" style="margin-top: 20px;"></div>
+            </div>
+            <div id="user-bar" style="padding: 10px; background: #232428; display:flex; align-items:center; gap:10px;">
+                <img id="my-pfp" src="" style="width:32px; height:32px; border-radius:50%;">
+                <span id="my-username" style="font-weight:bold; font-size:14px;">Yükleniyor...</span>
+                <button id="btn-logout" style="margin-left:auto; background:none; border:none; color:#ed4245; cursor:pointer;">Çıkış</button>
             </div>
         </div>
-
-        <div class="input-area">
-            <div class="input-container">
-                <input type="text" id="messageInput" placeholder="#genel-sohbet kanalına mesaj gönder">
+        <div class="chat-area">
+            <div class="chat-header" style="padding: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.2);"># genel-sohbet</div>
+            <div class="messages" id="msg-list"></div>
+            <div class="input-area">
+                <input type="text" id="msg-input" placeholder="Mesajınızı gönderin...">
             </div>
         </div>
     </div>
 
-    <script>
-        /* JavaScript - Mesaj Gönderme Mantığı */
-        const input = document.getElementById('messageInput');
-        const container = document.getElementById('messageContainer');
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, set, push, onValue, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        input.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter' && this.value.trim() !== "") {
-                const messageText = this.value;
-                
-                // Mesaj HTML'i oluştur
-                const now = new Date();
-                const time = now.getHours() + ":" + now.getMinutes().toString().padStart(2, '0');
+        // Senin verdiğin config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCXca2LRaHFx6iZX9vhfe6lXMS9UY5nO54",
+            authDomain: "rysu-server.firebaseapp.com",
+            projectId: "rysu-server",
+            storageBucket: "rysu-server.firebasestorage.app",
+            messagingSenderId: "253844771451",
+            appId: "1:253844771451:web:bd370ae5a93eae66fcc8de",
+            measurementId: "G-T632DDDX6L"
+        };
 
-                const newMessage = `
-                    <div class="message">
-                        <div class="avatar"></div>
-                        <div class="msg-info">
-                            <b>Sen (Admin)</b> <span>Bugün ${time}</span>
-                            <div class="msg-text">${messageText}</div>
-                        </div>
-                    </div>
-                `;
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
 
-                // Ekrana ekle
-                container.innerHTML += newMessage;
-                
-                // Girdiyi temizle ve aşağı kaydır
-                this.value = "";
-                container.scrollTop = container.scrollHeight;
+        let selectedPfp = "https://api.dicebear.com/7.x/adventurer/svg?seed=Felix";
+
+        // Profil Resmi Seçeneklerini Oluştur
+        const pfpList = document.getElementById('pfp-list');
+        ["Felix", "Aneka", "Milo", "Luna"].forEach(seed => {
+            const img = document.createElement('img');
+            img.src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}`;
+            img.className = 'pfp-option';
+            img.onclick = () => {
+                document.querySelectorAll('.pfp-option').forEach(el => el.classList.remove('selected'));
+                img.classList.add('selected');
+                selectedPfp = img.src;
+            };
+            pfpList.appendChild(img);
+        });
+
+        // OTOMATİK GİRİŞ (Auto-Login)
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                const userRef = ref(db, 'users/' + user.uid);
+                onValue(userRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if(data) {
+                        document.getElementById('my-username').innerText = data.username;
+                        document.getElementById('my-pfp').src = data.pfp;
+                    }
+                });
+                loadMessages();
+            } else {
+                document.getElementById('auth-screen').style.display = 'flex';
+                document.getElementById('app').style.display = 'none';
             }
         });
-    </script>
 
+        // KAYIT FONKSİYONU
+        document.getElementById('btn-register').onclick = async () => {
+            const email = document.getElementById('reg-email').value;
+            const pass = document.getElementById('reg-pass').value;
+            const username = document.getElementById('reg-username').value;
+
+            try {
+                const result = await createUserWithEmailAndPassword(auth, email, pass);
+                await set(ref(db, 'users/' + result.user.uid), {
+                    username: username,
+                    pfp: selectedPfp,
+                    email: email
+                });
+            } catch (err) { alert("Hata: " + err.message); }
+        };
+
+        // GİRİŞ FONKSİYONU
+        document.getElementById('btn-login').onclick = () => {
+            const email = document.getElementById('log-email').value;
+            const pass = document.getElementById('log-pass').value;
+            signInWithEmailAndPassword(auth, email, pass).catch(err => alert(err.message));
+        };
+
+        // ÇIKIŞ
+        document.getElementById('btn-logout').onclick = () => signOut(auth);
+
+        // MESAJ GÖNDERME
+        document.getElementById('msg-input').onkeypress = (e) => {
+            if(e.key === 'Enter' && e.target.value.trim() !== "") {
+                const msgRef = ref(db, 'messages');
+                push(msgRef, {
+                    sender: document.getElementById('my-username').innerText,
+                    text: e.target.value,
+                    timestamp: Date.now()
+                });
+                e.target.value = "";
+            }
+        };
+
+        // MESAJLARI DİNLE
+        function loadMessages() {
+            const msgRef = ref(db, 'messages');
+            onValue(msgRef, (snapshot) => {
+                const list = document.getElementById('msg-list');
+                list.innerHTML = "";
+                snapshot.forEach(child => {
+                    const data = child.val();
+                    const div = document.createElement('div');
+                    div.className = 'msg-bubble';
+                    div.innerHTML = `<small style="color:var(--accent)">${data.sender}</small><br>${data.text}`;
+                    list.appendChild(div);
+                });
+                list.scrollTop = list.scrollHeight;
+            });
+        }
+
+        // Ekranlar Arası Geçiş
+        document.getElementById('to-login').onclick = () => {
+            document.getElementById('register-box').style.display = 'none';
+            document.getElementById('login-box').style.display = 'block';
+        };
+        document.getElementById('to-register').onclick = () => {
+            document.getElementById('login-box').style.display = 'none';
+            document.getElementById('register-box').style.display = 'block';
+        };
+    </script>
 </body>
 </html>
