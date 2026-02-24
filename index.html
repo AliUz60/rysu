@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Arkadaş Sohbet · Premium</title>
-    <!-- Firebase SDK (9.22.2) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
@@ -12,7 +12,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, system-ui, sans-serif; }
-        body { height: 100vh; display: flex; background-color: #1e2124; overflow: hidden; }
+        body { height: 100vh; display: flex; background-color: #1e2124; overflow: hidden; transition: background-color 0.3s; }
+        body.light-mode { background-color: #f2f3f5; }
+        body.light-mode .servers { background-color: #e3e5e8; }
+        body.light-mode .channels-panel { background-color: #f2f3f5; color: #2e3338; }
+        body.light-mode .chat-area { background-color: #ffffff; }
+        body.light-mode .message-text { background-color: #e3e5e8; color: #2e3338; }
         /* Sol sunucu çubuğu */
         .servers { width: 72px; background-color: #1a1c1f; display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 8px; overflow-y: auto; }
         .server-icon { width: 48px; height: 48px; border-radius: 30px; background: #2b2f33; display: flex; align-items: center; justify-content: center; color: #d1d5da; font-size: 20px; font-weight: bold; transition: 0.1s; cursor: pointer; position: relative; }
@@ -22,7 +27,6 @@
         .server-icon.dm { background: #2f3136; color: #3ba55d; }
         .server-icon.add-server { background: #2f3136; color: #3a6ea5; font-size: 24px; }
 
-        /* Kanallar paneli */
         .channels-panel { width: 240px; background-color: #2b2f33; display: flex; flex-direction: column; color: #b9bbbe; }
         .server-name { padding: 18px 16px; font-weight: 600; color: #ffffff; border-bottom: 1px solid #1e2124; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
         .channel-category { padding: 16px 16px 4px 16px; text-transform: uppercase; font-size: 12px; font-weight: 600; color: #8e9297; display: flex; align-items: center; justify-content: space-between; }
@@ -32,7 +36,6 @@
         .channel i { font-size: 20px; width: 22px; text-align: center; }
         .user-footer { padding: 16px; border-top: 1px solid #1e2124; display: flex; align-items: center; gap: 8px; margin-top: auto; }
 
-        /* Ana sohbet alanı */
         .chat-area { flex: 1; background-color: #31363b; display: flex; flex-direction: column; }
         .chat-header { padding: 12px 20px; background-color: #2f3338; border-bottom: 1px solid #1e2124; display: flex; align-items: center; gap: 10px; color: #ffffff; font-weight: 600; }
         .messages-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
@@ -54,16 +57,18 @@
         .input-wrapper i { color: #b9bbbe; font-size: 20px; margin-left: 12px; cursor: pointer; }
         .input-wrapper i:hover { color: #dcddde; }
 
-        /* Sağ panel (arkadaş listesi) */
         .users-panel { width: 240px; background-color: #2b2f33; padding: 16px 8px; color: #b9bbbe; overflow-y: auto; }
         .users-title { text-transform: uppercase; font-size: 12px; font-weight: 600; padding: 0 8px 8px 8px; border-bottom: 1px solid #1e2124; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .user-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 4px; cursor: pointer; }
+        .user-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 4px; cursor: pointer; justify-content: space-between; }
         .user-item:hover { background-color: #35393f; }
+        .user-info { display: flex; align-items: center; gap: 8px; flex:1; }
         .user-status { width: 10px; height: 10px; border-radius: 50%; background-color: #3ba55d; }
         .user-status.offline { background-color: #747f8d; }
         .user-name { font-size: 14px; font-weight: 500; color: #dcddde; }
+        .delete-friend { color: #b9bbbe; visibility: hidden; }
+        .user-item:hover .delete-friend { visibility: visible; }
+        .delete-friend:hover { color: #f04747; }
 
-        /* Modal stilleri */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center; z-index: 1000; }
         .modal.active { display: flex; }
         .modal-content { background-color: #2f3338; border-radius: 8px; width: 400px; max-width: 90%; padding: 20px; color: white; box-shadow: 0 0 20px black; }
@@ -72,9 +77,15 @@
         .modal-content button { background: #3a6ea5; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 8px; }
         .modal-content button.secondary { background: #3d434a; }
         .modal-content button:hover { filter: brightness(1.2); }
+        .modal-content select { width: 100%; padding: 10px; background: #1e2124; border: 1px solid #3d434a; color: white; border-radius: 4px; margin-bottom: 16px; }
 
-        /* Dosya yükleme butonu */
         #file-input { display: none; }
+
+        /* Context menu (sağ tık menüsü) */
+        .context-menu { position: absolute; background: #2f3338; border: 1px solid #1e2124; border-radius: 4px; display: none; z-index: 2000; }
+        .context-menu ul { list-style: none; padding: 4px 0; }
+        .context-menu li { padding: 8px 20px; color: #dcddde; cursor: pointer; }
+        .context-menu li:hover { background-color: #3a6ea5; color: white; }
     </style>
 </head>
 <body>
@@ -91,9 +102,8 @@
         <div class="user-footer" id="user-footer">
             <div style="width:32px;height:32px;border-radius:16px;background:#3a6ea5;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;" id="avatar-letter">K</div>
             <div style="flex:1;color:white;font-size:14px;font-weight:500;" id="current-username">Yükleniyor...</div>
-            <i class="fas fa-microphone"></i>
-            <i class="fas fa-headphones"></i>
-            <i class="fas fa-cog"></i>
+            <!-- Sadece ayarlar butonu kaldı, mikrofon ve kulaklık yok -->
+            <i class="fas fa-cog" id="settings-button" style="cursor:pointer;"></i>
         </div>
     </div>
 
@@ -126,7 +136,6 @@
     </div>
 
     <!-- MODALLAR -->
-    <!-- Kullanıcı adı modalı (ilk giriş) -->
     <div class="modal active" id="username-modal">
         <div class="modal-content">
             <h2>✨ Arkadaş Sohbet'e Hoş Geldin</h2>
@@ -137,7 +146,6 @@
         </div>
     </div>
 
-    <!-- Sunucu oluşturma modalı -->
     <div class="modal" id="server-modal">
         <div class="modal-content">
             <h2>➕ Yeni Sunucu Oluştur</h2>
@@ -147,7 +155,6 @@
         </div>
     </div>
 
-    <!-- Arkadaş ekleme modalı -->
     <div class="modal" id="friend-modal">
         <div class="modal-content">
             <h2>👤 Arkadaş Ekle</h2>
@@ -157,8 +164,34 @@
         </div>
     </div>
 
+    <!-- Ayarlar modalı -->
+    <div class="modal" id="settings-modal">
+        <div class="modal-content">
+            <h2>⚙️ Ayarlar</h2>
+            <label>Kullanıcı Adı</label>
+            <input type="text" id="settings-username" placeholder="Yeni kullanıcı adı">
+            <button onclick="changeUsername()">Değiştir</button>
+            <br><br>
+            <label>Tema</label>
+            <select id="theme-select">
+                <option value="dark">Koyu</option>
+                <option value="light">Aydınlık</option>
+            </select>
+            <br><br>
+            <p style="color: #f04747;"><i class="fas fa-exclamation-triangle"></i> Sesli arama özelliği yok (Firebase + HTML ile sınırlı).</p>
+            <button class="secondary" onclick="closeSettingsModal()">Kapat</button>
+        </div>
+    </div>
+
     <!-- Gizli dosya inputu -->
     <input type="file" id="file-input" accept="image/*" onchange="uploadImage(this)">
+
+    <!-- Sağ tık menüsü (sunucu silme için) -->
+    <div class="context-menu" id="server-context-menu">
+        <ul>
+            <li id="delete-server-option">Sunucuyu Sil</li>
+        </ul>
+    </div>
 
     <script>
         // Firebase config
@@ -181,6 +214,8 @@
         let currentServer = 'genel';
         let currentChannel = 'genel';
         let currentDMFriend = null;
+        let contextMenu = document.getElementById('server-context-menu');
+        let selectedServerForDelete = null;
 
         // DOM elementleri
         const usernameModal = document.getElementById('username-modal');
@@ -189,6 +224,9 @@
         const modalUsernameCancel = document.getElementById('modal-username-cancel');
         const serverModal = document.getElementById('server-modal');
         const friendModal = document.getElementById('friend-modal');
+        const settingsModal = document.getElementById('settings-modal');
+        const settingsUsername = document.getElementById('settings-username');
+        const themeSelect = document.getElementById('theme-select');
         const messagesContainer = document.getElementById('messages-container');
         const channelListDiv = document.getElementById('channel-list');
         const currentChannelSpan = document.getElementById('current-channel');
@@ -199,6 +237,7 @@
         const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
         const fileInput = document.getElementById('file-input');
+        const settingsButton = document.getElementById('settings-button');
 
         // Kullanıcı adı kontrolü
         if (currentUser) {
@@ -255,13 +294,37 @@
 
             // Varsayılan sunucuya geç
             switchServer('genel');
+
+            // Sağ tık menüsünü gizle
+            document.addEventListener('click', () => contextMenu.style.display = 'none');
+            document.addEventListener('contextmenu', (e) => e.preventDefault()); // Sayfada genel sağ tıkkı engelle
+
+            // Ayarlar butonu
+            settingsButton.addEventListener('click', openSettingsModal);
+
+            // Tema kontrolü (localStorage)
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            themeSelect.value = savedTheme;
+            applyTheme(savedTheme);
+            themeSelect.addEventListener('change', (e) => {
+                applyTheme(e.target.value);
+                localStorage.setItem('theme', e.target.value);
+            });
+        }
+
+        function applyTheme(theme) {
+            if (theme === 'light') {
+                document.body.classList.add('light-mode');
+            } else {
+                document.body.classList.remove('light-mode');
+            }
         }
 
         function renderServerList(serversData) {
             let html = '';
             for (let id in serversData) {
                 const activeClass = (id === currentServer && !currentDMFriend) ? 'active' : '';
-                html += `<div class="server-icon ${activeClass}" onclick="switchServer('${id}')">${serversData[id].name.charAt(0).toUpperCase()}</div>`;
+                html += `<div class="server-icon ${activeClass}" data-server-id="${id}" oncontextmenu="showServerContextMenu(event, '${id}')" onclick="switchServer('${id}')">${serversData[id].name.charAt(0).toUpperCase()}</div>`;
             }
             html += `<div class="server-divider"></div>`;
             html += `<div class="server-icon add-server" onclick="openServerModal()"><i class="fas fa-plus"></i></div>`;
@@ -273,13 +336,18 @@
             let friendsHtml = '';
             let dmHtml = '';
             for (let friend in friendsData) {
-                friendsHtml += `<div class="user-item" onclick="openDM('${friend}')">
-                    <div class="user-status"></div>
-                    <span class="user-name">${friend}</span>
+                friendsHtml += `<div class="user-item">
+                    <div class="user-info" onclick="openDM('${friend}')">
+                        <div class="user-status"></div>
+                        <span class="user-name">${friend}</span>
+                    </div>
+                    <i class="fas fa-trash delete-friend" onclick="deleteFriend('${friend}')"></i>
                 </div>`;
                 dmHtml += `<div class="user-item" onclick="openDM('${friend}')">
-                    <div class="user-status"></div>
-                    <span class="user-name">${friend}</span>
+                    <div class="user-info">
+                        <div class="user-status"></div>
+                        <span class="user-name">${friend}</span>
+                    </div>
                 </div>`;
             }
             document.getElementById('friends-list').innerHTML = friendsHtml;
@@ -287,13 +355,14 @@
         }
 
         function switchServer(serverId) {
+            if (!serverId) return;
             currentServer = serverId;
             currentDMFriend = null;
             document.getElementById('current-server-name').style.display = 'flex';
             serverNameSpan.textContent = serverId;
-            // Sunucu ikonlarını güncelle (aktif sınıfı)
+            // Sunucu ikonlarını güncelle
             document.querySelectorAll('.server-icon').forEach(ic => ic.classList.remove('active'));
-            const activeServerIcon = Array.from(document.querySelectorAll('.server-icon')).find(el => el.textContent.trim() === serverId.charAt(0).toUpperCase());
+            const activeServerIcon = document.querySelector(`.server-icon[data-server-id="${serverId}"]`);
             if (activeServerIcon) activeServerIcon.classList.add('active');
             // Kanalları yükle
             db.ref('servers/' + serverId + '/channels').once('value', (snap) => {
@@ -486,6 +555,77 @@
                         alert('Bu kullanıcı bulunamadı.');
                     }
                 });
+            } else {
+                alert('Geçerli bir kullanıcı adı girin.');
+            }
+        };
+
+        // Arkadaş silme
+        window.deleteFriend = (friendName) => {
+            if (confirm(friendName + ' adlı kullanıcıyı arkadaşlarından çıkarmak istediğine emin misin?')) {
+                db.ref('users/' + currentUser + '/friends/' + friendName).remove();
+                db.ref('users/' + friendName + '/friends/' + currentUser).remove();
+                if (currentDMFriend === friendName) {
+                    openDMHome();
+                }
+            }
+        };
+
+        // Sunucu silme için sağ tık menüsü
+        window.showServerContextMenu = (event, serverId) => {
+            event.preventDefault();
+            selectedServerForDelete = serverId;
+            contextMenu.style.display = 'block';
+            contextMenu.style.left = event.pageX + 'px';
+            contextMenu.style.top = event.pageY + 'px';
+        };
+
+        document.getElementById('delete-server-option').addEventListener('click', () => {
+            if (selectedServerForDelete) {
+                if (selectedServerForDelete === 'genel') {
+                    alert('Ana sunucu silinemez.');
+                } else if (confirm('"' + selectedServerForDelete + '" sunucusunu silmek istediğine emin misin?')) {
+                    db.ref('servers/' + selectedServerForDelete).remove().then(() => {
+                        if (currentServer === selectedServerForDelete) {
+                            switchServer('genel');
+                        }
+                    });
+                }
+                contextMenu.style.display = 'none';
+                selectedServerForDelete = null;
+            }
+        });
+
+        // Ayarlar modalı
+        function openSettingsModal() {
+            settingsUsername.value = currentUser;
+            settingsModal.classList.add('active');
+        }
+
+        window.closeSettingsModal = () => {
+            settingsModal.classList.remove('active');
+        };
+
+        window.changeUsername = () => {
+            const newName = settingsUsername.value.trim();
+            if (newName && newName !== currentUser) {
+                // Firebase'de kullanıcı adı değişikliği: eski kullanıcıyı sil, yeni ekle
+                // Not: Bu basit örnekte sadece localStorage ve görünen adı değiştiriyoruz.
+                // Daha karmaşık yapıda tüm mesajlardaki kullanıcı adlarını da güncellemek gerekir.
+                // Şimdilik sadece oturumdaki adı değiştirelim.
+                const oldUser = currentUser;
+                currentUser = newName;
+                localStorage.setItem('chat_username', currentUser);
+                currentUsernameSpan.textContent = currentUser;
+                avatarLetter.textContent = currentUser.charAt(0).toUpperCase();
+                // Firebase'de users listesini güncelle (eskiyi sil, yeni ekle)
+                db.ref('users/' + oldUser).remove();
+                db.ref('users/' + currentUser).set({ username: currentUser, lastSeen: Date.now() });
+                // Arkadaşlık ilişkilerini de güncellemek gerekir ama basitlik için şimdilik atlıyoruz.
+                closeSettingsModal();
+                alert('Kullanıcı adı değiştirildi. Not: Arkadaşlıklar korunmaz, yeniden eklenmesi gerekebilir.');
+            } else if (newName === currentUser) {
+                alert('Aynı kullanıcı adını girdiniz.');
             } else {
                 alert('Geçerli bir kullanıcı adı girin.');
             }
