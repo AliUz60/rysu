@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arkadaş Sohbet · Adminli</title>
+    <title>Arkadaş Sohbet · Admin Panelli</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
@@ -38,7 +38,7 @@
         .channel i { font-size: 20px; width: 22px; text-align: center; }
         .user-footer { padding: 16px; border-top: 1px solid #1e2124; display: flex; align-items: center; gap: 8px; margin-top: auto; }
 
-        .chat-area { flex: 1; background-color: #31363b; display: flex; flex-direction: column; }
+        .chat-area { flex: 1; background-color: #31363b; display: flex; flex-direction: column; position: relative; }
         .chat-header { padding: 12px 20px; background-color: #2f3338; border-bottom: 1px solid #1e2124; display: flex; align-items: center; gap: 10px; color: #ffffff; font-weight: 600; }
         .messages-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
         .message { display: flex; gap: 16px; align-items: flex-start; }
@@ -59,10 +59,20 @@
         .input-wrapper i { color: #b9bbbe; font-size: 20px; margin-left: 12px; cursor: pointer; padding: 8px 0; }
         .input-wrapper i:hover { color: #dcddde; }
 
+        /* Emoji panel */
         .emoji-panel { position: absolute; bottom: 80px; right: 220px; background: #2f3338; border-radius: 8px; padding: 10px; display: none; grid-template-columns: repeat(6, 1fr); gap: 8px; z-index: 200; box-shadow: 0 0 10px black; }
         .emoji-panel.active { display: grid; }
         .emoji-item { font-size: 24px; cursor: pointer; text-align: center; padding: 4px; border-radius: 4px; }
         .emoji-item:hover { background-color: #3a6ea5; }
+
+        /* Admin komut paneli */
+        .admin-panel { position: absolute; bottom: 0; left: 0; right: 0; background-color: #1e2124; border-top: 2px solid #3a6ea5; padding: 10px 20px; display: none; align-items: center; gap: 10px; z-index: 300; }
+        .admin-panel.active { display: flex; }
+        .admin-panel input { flex: 1; background: #2b2f33; border: none; padding: 10px; color: white; border-radius: 4px; outline: none; }
+        .admin-panel input::placeholder { color: #7b7f85; }
+        .admin-panel button { background: #3a6ea5; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+        .admin-panel button:hover { filter: brightness(1.2); }
+        .admin-panel .close-btn { background: #f04747; }
 
         .users-panel { width: 240px; background-color: #2b2f33; padding: 16px 8px; color: #b9bbbe; overflow-y: auto; }
         .users-title { text-transform: uppercase; font-size: 12px; font-weight: 600; padding: 0 8px 8px 8px; border-bottom: 1px solid #1e2124; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
@@ -76,6 +86,7 @@
         .user-item:hover .delete-friend { visibility: visible; }
         .delete-friend:hover { color: #f04747; }
 
+        /* Modal stilleri */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center; z-index: 1000; }
         .modal.active { display: flex; }
         .modal-content { background-color: #2f3338; border-radius: 8px; width: 400px; max-width: 90%; padding: 20px; color: white; box-shadow: 0 0 20px black; }
@@ -86,14 +97,12 @@
         .modal-content button:hover { filter: brightness(1.2); }
 
         #file-input { display: none; }
+        /* Sağ tık menüsü (sunucu silme için) */
         .context-menu { position: absolute; background: #2f3338; border: 1px solid #1e2124; border-radius: 4px; display: none; z-index: 2000; }
         .context-menu ul { list-style: none; padding: 4px 0; }
         .context-menu li { padding: 8px 20px; color: #dcddde; cursor: pointer; }
         .context-menu li:hover { background-color: #3a6ea5; color: white; }
         .context-menu li.danger:hover { background-color: #f04747; }
-
-        /* Admin göstergesi */
-        .admin-badge { background-color: gold; color: black; border-radius: 4px; padding: 2px 6px; font-size: 10px; margin-left: 4px; }
     </style>
 </head>
 <body>
@@ -105,6 +114,7 @@
         <div class="server-name" id="current-server-name">
             <span id="server-name-text">genel</span>
             <i class="fas fa-chevron-down" id="server-menu-toggle"></i>
+            <!-- Sunucu menüsü -->
             <div class="server-menu" id="server-menu">
                 <ul>
                     <li id="server-settings-option">Sunucu Ayarları</li>
@@ -134,6 +144,7 @@
                 <i class="fas fa-smile" id="emoji-button"></i>
                 <i class="fas fa-paper-plane" id="send-button"></i>
             </div>
+            <!-- Emoji paneli -->
             <div class="emoji-panel" id="emoji-panel">
                 <span class="emoji-item">😀</span>
                 <span class="emoji-item">😂</span>
@@ -149,6 +160,13 @@
                 <span class="emoji-item">😢</span>
             </div>
         </div>
+
+        <!-- Admin Komut Paneli (sadece AliUz60 görür) -->
+        <div class="admin-panel" id="admin-panel">
+            <input type="text" id="admin-command" placeholder="Admin komutu yazın (örn: /sunucuSil oyun)">
+            <button onclick="executeAdminCommand()">Çalıştır</button>
+            <button class="close-btn" onclick="toggleAdminPanel()">Kapat</button>
+        </div>
     </div>
 
     <!-- SAĞ ARKADAŞ LİSTESİ -->
@@ -163,7 +181,7 @@
     </div>
 
     <!-- MODALLAR -->
-    <div class="modal active" id="username-modal">
+    <div class="modal" id="username-modal">
         <div class="modal-content">
             <h2>✨ Arkadaş Sohbet'e Hoş Geldin</h2>
             <p>Kullanıcı adını gir, hemen başla!</p>
@@ -191,6 +209,7 @@
         </div>
     </div>
 
+    <!-- Ayarlar modalı -->
     <div class="modal" id="settings-modal">
         <div class="modal-content">
             <h2>⚙️ Ayarlar</h2>
@@ -210,7 +229,7 @@
     <!-- Gizli dosya inputu -->
     <input type="file" id="file-input" accept="image/*" onchange="uploadImage(this)">
 
-    <!-- Sağ tık menüsü -->
+    <!-- Sağ tık menüsü (sunucu silme için) -->
     <div class="context-menu" id="server-context-menu">
         <ul>
             <li class="danger" id="delete-server-option">Sunucuyu Sil</li>
@@ -235,13 +254,15 @@
 
         // Global değişkenler
         let currentUser = localStorage.getItem('chat_username') || null;
-        const ADMIN_USER = "AliUz60"; // Admin kullanıcı adı
         let currentServer = 'genel';
         let currentChannel = 'genel';
         let currentDMFriend = null;
         let contextMenu = document.getElementById('server-context-menu');
         let selectedServerForDelete = null;
         let currentTheme = localStorage.getItem('theme') || 'dark';
+
+        // Admin kullanıcı adı
+        const ADMIN_USER = "AliUz60";
 
         // DOM elementleri
         const usernameModal = document.getElementById('username-modal');
@@ -270,14 +291,10 @@
         const settingsTheme = document.getElementById('settings-theme');
         const serverMenuToggle = document.getElementById('server-menu-toggle');
         const serverMenu = document.getElementById('server-menu');
+        const adminPanel = document.getElementById('admin-panel');
+        const adminCommand = document.getElementById('admin-command');
 
-        // Kullanıcı adı kontrolü (benzersizlik)
-        async function isUsernameTaken(username) {
-            const snap = await db.ref('users/' + username).once('value');
-            return snap.exists();
-        }
-
-        // Giriş modalı
+        // Kullanıcı adı kontrolü
         if (currentUser) {
             usernameModal.classList.remove('active');
             initApp();
@@ -285,51 +302,45 @@
             usernameModal.classList.add('active');
         }
 
-        modalUsernameSave.addEventListener('click', async () => {
+        modalUsernameSave.addEventListener('click', () => {
             const name = modalUsernameInput.value.trim();
             if (name) {
-                const taken = await isUsernameTaken(name);
-                if (taken) {
-                    alert('Bu kullanıcı adı zaten alınmış. Lütfen başka bir ad seçin.');
-                } else {
-                    currentUser = name;
-                    localStorage.setItem('chat_username', currentUser);
-                    usernameModal.classList.remove('active');
-                    db.ref('users/' + currentUser).set({ username: currentUser, lastSeen: Date.now() });
-                    initApp();
-                }
+                // Kullanıcı adı daha önce alınmış mı kontrol et
+                db.ref('users/' + name).once('value', (snap) => {
+                    if (snap.exists()) {
+                        alert('Bu kullanıcı adı zaten alınmış. Lütfen başka bir ad seçin.');
+                    } else {
+                        currentUser = name;
+                        localStorage.setItem('chat_username', currentUser);
+                        usernameModal.classList.remove('active');
+                        db.ref('users/' + currentUser).set({ username: currentUser, lastSeen: Date.now() });
+                        initApp();
+                    }
+                });
             } else {
                 alert('Lütfen bir kullanıcı adı girin.');
             }
         });
 
-        modalUsernameCancel.addEventListener('click', async () => {
-            // İptal edince varsayılan bir isim ver, ama benzersiz olmalı
-            let defaultName = 'Arkadaş';
-            let counter = 1;
-            while (await isUsernameTaken(defaultName)) {
-                defaultName = 'Arkadaş' + counter;
-                counter++;
-            }
-            currentUser = defaultName;
-            localStorage.setItem('chat_username', currentUser);
-            usernameModal.classList.remove('active');
-            db.ref('users/' + currentUser).set({ username: currentUser, lastSeen: Date.now() });
-            initApp();
+        modalUsernameCancel.addEventListener('click', () => {
+            // İptal ederse misafir adı ver, ama benzersizlik kontrolü yap (rastgele sayı ekle)
+            let guestName = 'Misafir' + Math.floor(Math.random() * 10000);
+            db.ref('users/' + guestName).once('value', (snap) => {
+                while (snap.exists()) {
+                    guestName = 'Misafir' + Math.floor(Math.random() * 10000);
+                }
+                currentUser = guestName;
+                localStorage.setItem('chat_username', currentUser);
+                usernameModal.classList.remove('active');
+                db.ref('users/' + currentUser).set({ username: currentUser, lastSeen: Date.now() });
+                initApp();
+            });
         });
 
         function initApp() {
             currentUsernameSpan.textContent = currentUser;
             avatarLetter.textContent = currentUser.charAt(0).toUpperCase();
             applyTheme(currentTheme);
-
-            // Admin rozeti (sadece kullanıcı adına göre)
-            if (currentUser === ADMIN_USER) {
-                const badge = document.createElement('span');
-                badge.className = 'admin-badge';
-                badge.textContent = 'ADMIN';
-                document.getElementById('user-footer').querySelector('div').appendChild(badge);
-            }
 
             // Varsayılan sunucuyu kontrol et
             db.ref('servers/genel').once('value', (snap) => {
@@ -341,30 +352,136 @@
                 }
             });
 
+            // Sunucu listesini dinle
             db.ref('servers').on('value', (snap) => {
                 renderServerList(snap.val() || {});
             });
 
+            // Arkadaş listesini dinle
             db.ref('users/' + currentUser + '/friends').on('value', (snap) => {
                 renderFriendsList(snap.val() || {});
             });
 
+            // Varsayılan sunucuya geç
             switchServer('genel');
 
+            // Sağ tık menüsünü gizle
             document.addEventListener('click', () => {
                 contextMenu.style.display = 'none';
                 serverMenu.classList.remove('active');
             });
             document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            // Admin paneli için klavye dinleyicisi (P tuşu)
+            document.addEventListener('keydown', (e) => {
+                if (e.key.toLowerCase() === 'p' && currentUser === ADMIN_USER) {
+                    e.preventDefault();
+                    toggleAdminPanel();
+                }
+                // ESC ile paneli kapat
+                if (e.key === 'Escape' && adminPanel.classList.contains('active')) {
+                    adminPanel.classList.remove('active');
+                }
+            });
+
+            // Admin komutlarını tanımla (konsol için de)
+            if (currentUser === ADMIN_USER) {
+                window.admin = {
+                    sunucuSil: (serverName) => {
+                        if (serverName === 'genel') {
+                            console.error('Ana sunucu silinemez.');
+                            return;
+                        }
+                        db.ref('servers/' + serverName).remove()
+                            .then(() => console.log('Sunucu silindi: ' + serverName))
+                            .catch(err => console.error('Hata:', err));
+                    },
+                    kullaniciSil: (username) => {
+                        if (username === ADMIN_USER) {
+                            console.error('Admin silinemez.');
+                            return;
+                        }
+                        // Kullanıcının tüm arkadaşlıklarını temizle
+                        db.ref('users/' + username + '/friends').once('value', (snap) => {
+                            snap.forEach(child => {
+                                db.ref('users/' + child.key + '/friends/' + username).remove();
+                            });
+                        });
+                        // Kullanıcıyı sil
+                        db.ref('users/' + username).remove()
+                            .then(() => console.log('Kullanıcı silindi: ' + username))
+                            .catch(err => console.error('Hata:', err));
+                    },
+                    mesajSil: (messageId, type, channelId) => {
+                        // type: "server" veya "dm", channelId: örn "genel_genel" veya "AliUz60_Ahmet"
+                        let path = (type === 'server') ? 'messages/server/' + channelId + '/' + messageId : 'messages/dm/' + channelId + '/' + messageId;
+                        db.ref(path).remove()
+                            .then(() => console.log('Mesaj silindi: ' + messageId))
+                            .catch(err => console.error('Hata:', err));
+                    },
+                    tumMesajlariSil: (type, channelId) => {
+                        let path = (type === 'server') ? 'messages/server/' + channelId : 'messages/dm/' + channelId;
+                        db.ref(path).remove()
+                            .then(() => console.log('Tüm mesajlar silindi: ' + channelId))
+                            .catch(err => console.error('Hata:', err));
+                    },
+                    yedekle: () => {
+                        db.ref().once('value', (snap) => {
+                            console.log('=== VERİTABANI YEDEĞİ ===');
+                            console.log(JSON.stringify(snap.val(), null, 2));
+                        });
+                    }
+                };
+                console.log('✅ Admin komutları yüklendi. Kullanabileceğin komutlar:', Object.keys(window.admin));
+            }
+        }
+
+        function toggleAdminPanel() {
+            if (currentUser === ADMIN_USER) {
+                adminPanel.classList.toggle('active');
+                if (adminPanel.classList.contains('active')) {
+                    adminCommand.focus();
+                }
+            }
+        }
+
+        function executeAdminCommand() {
+            const cmd = adminCommand.value.trim();
+            if (!cmd) return;
+            const parts = cmd.split(' ');
+            const command = parts[0].toLowerCase();
+            const args = parts.slice(1);
+
+            if (command === '/sunucusil' || command === '/sunucuSil') {
+                if (args[0]) admin.sunucuSil(args[0]);
+                else alert('Kullanım: /sunucuSil sunucuAdı');
+            } else if (command === '/kullanicisil' || command === '/kullaniciSil') {
+                if (args[0]) admin.kullaniciSil(args[0]);
+                else alert('Kullanım: /kullaniciSil kullanıcıAdı');
+            } else if (command === '/mesajsil' || command === '/mesajSil') {
+                if (args.length >= 3) admin.mesajSil(args[0], args[1], args[2]);
+                else alert('Kullanım: /mesajSil mesajId kanalTipi kanalId');
+            } else if (command === '/temizle') {
+                if (args.length >= 2) admin.tumMesajlariSil(args[0], args[1]);
+                else alert('Kullanım: /temizle kanalTipi kanalId');
+            } else if (command === '/yedekle') {
+                admin.yedekle();
+            } else {
+                alert('Bilinmeyen komut. Mevcut komutlar: /sunucuSil, /kullaniciSil, /mesajSil, /temizle, /yedekle');
+            }
+            adminCommand.value = '';
         }
 
         function applyTheme(theme) {
             if (theme === 'light') {
                 document.body.style.backgroundColor = '#f0f0f0';
-                // Basitçe yeniliyoruz, çünkü çok fazla stil var
-                // location.reload(); // daha iyi bir yöntem: css class değiştir
+                document.querySelectorAll('.channels-panel, .chat-area, .users-panel, .server-icon, .channel, .message-text, .modal-content').forEach(el => {
+                    el.style.backgroundColor = '#fff';
+                    el.style.color = '#000';
+                });
             } else {
                 document.body.style.backgroundColor = '#1e2124';
+                location.reload(); // pratik çözüm: temayı değiştirince sayfayı yenile
             }
         }
 
@@ -544,6 +661,7 @@
             }
         });
 
+        // Emoji paneli
         emojiButton.addEventListener('click', (e) => {
             e.stopPropagation();
             emojiPanel.classList.toggle('active');
@@ -563,6 +681,7 @@
             }
         });
 
+        // Resim yükleme
         window.uploadImage = (input) => {
             const file = input.files[0];
             if (!file) return;
@@ -575,6 +694,7 @@
             });
         };
 
+        // Modal işlevleri
         window.openServerModal = () => {
             serverModal.classList.add('active');
         };
@@ -630,6 +750,7 @@
             }
         };
 
+        // Sunucu silme (sağ tık menüsü)
         window.showServerContextMenu = (event, serverId) => {
             event.preventDefault();
             selectedServerForDelete = serverId;
@@ -654,6 +775,7 @@
             }
         });
 
+        // Sunucu menüsü (aşağı ok)
         serverMenuToggle.addEventListener('click', (e) => {
             e.stopPropagation();
             serverMenu.classList.toggle('active');
@@ -677,6 +799,7 @@
             serverMenu.classList.remove('active');
         });
 
+        // Ayarlar modalı
         settingsButton.addEventListener('click', () => {
             settingsUsername.value = currentUser;
             settingsTheme.value = currentTheme;
@@ -687,22 +810,28 @@
             settingsModal.classList.remove('active');
         });
 
-        saveSettings.addEventListener('click', async () => {
+        saveSettings.addEventListener('click', () => {
             const newUsername = settingsUsername.value.trim();
             if (newUsername && newUsername !== currentUser) {
-                // Kullanıcı adı değişikliği: eskiyi sil, yeniyi ekle
-                const taken = await isUsernameTaken(newUsername);
-                if (taken) {
-                    alert('Bu kullanıcı adı zaten alınmış.');
-                    return;
-                }
-                // Arkadaşlıkları korumak karmaşık, şimdilik sadece isim değiştir
-                db.ref('users/' + currentUser).remove(); // eski kaydı sil
-                currentUser = newUsername;
-                localStorage.setItem('chat_username', currentUser);
-                db.ref('users/' + currentUser).set({ username: currentUser, lastSeen: Date.now() });
-                currentUsernameSpan.textContent = currentUser;
-                avatarLetter.textContent = currentUser.charAt(0).toUpperCase();
+                // Yeni kullanıcı adı daha önce alınmış mı?
+                db.ref('users/' + newUsername).once('value', (snap) => {
+                    if (snap.exists()) {
+                        alert('Bu kullanıcı adı zaten kullanılıyor.');
+                    } else {
+                        // Eski kullanıcıyı taşı
+                        db.ref('users/' + currentUser).once('value', (eskiData) => {
+                            const userData = eskiData.val() || {};
+                            // Arkadaşlıkları güncelle (karmaşık, şimdilik sadece isim değiştir)
+                            db.ref('users/' + newUsername).set({ username: newUsername, lastSeen: Date.now() });
+                            db.ref('users/' + currentUser).remove();
+                            // Arkadaş listelerinde güncelleme yapılmalı, şimdilik basit
+                            currentUser = newUsername;
+                            localStorage.setItem('chat_username', currentUser);
+                            currentUsernameSpan.textContent = currentUser;
+                            avatarLetter.textContent = currentUser.charAt(0).toUpperCase();
+                        });
+                    }
+                });
             }
             const newTheme = settingsTheme.value;
             if (newTheme !== currentTheme) {
@@ -712,79 +841,6 @@
             }
             settingsModal.classList.remove('active');
         });
-
-        // ---------- ADMIN KOMUTLARI (sadece AliUz60 için) ----------
-        if (currentUser === ADMIN_USER) {
-            console.log('%c✅ Admin mod aktif! Komutlar: /yardim', 'color: gold; font-size: 16px;');
-            window.admin = {
-                // Sunucu sil
-                silSunucu: function(serverName) {
-                    if (serverName === 'genel') {
-                        console.log('Ana sunucu silinemez.');
-                        return;
-                    }
-                    db.ref('servers/' + serverName).remove().then(() => {
-                        console.log(serverName + ' sunucusu silindi.');
-                        if (currentServer === serverName) switchServer('genel');
-                    });
-                },
-                // Kullanıcı sil
-                silKullanici: function(username) {
-                    if (username === ADMIN_USER) {
-                        console.log('Admin kendini silemez.');
-                        return;
-                    }
-                    db.ref('users/' + username).remove().then(() => {
-                        console.log(username + ' kullanıcısı silindi.');
-                        // Arkadaşlıkları da temizle? Karmaşık, şimdilik sadece user'ı sil.
-                    });
-                },
-                // Duyuru gönder (tüm kanallara değil, sadece aktif kanala veya genel duyuru)
-                duyuru: function(message) {
-                    if (!message) return;
-                    const ref = db.ref('messages/server/genel_genel'); // genel kanala gönder
-                    ref.push({
-                        username: 'SYSTEM',
-                        text: '🔔 DUYURU: ' + message,
-                        timestamp: Date.now()
-                    });
-                    console.log('Duyuru gönderildi.');
-                },
-                // Yardım
-                yardim: function() {
-                    console.log(`
-                        Komutlar:
-                        /sunucu kaldir <isim>  -> admin.silSunucu('isim')
-                        /kullanici sil <isim>   -> admin.silKullanici('isim')
-                        /duyuru <mesaj>         -> admin.duyuru('mesaj')
-                        /yardim                  -> admin.yardim()
-                    `);
-                }
-            };
-
-            // Komut işlemek için basit bir fonksiyon (konsoldan / ile çağrılabilir)
-            window.cmd = function(input) {
-                const parts = input.trim().split(' ');
-                const command = parts[0].toLowerCase();
-                if (command === '/sunucu' && parts[1] === 'kaldir') {
-                    const serverName = parts[2];
-                    if (serverName) admin.silSunucu(serverName);
-                    else console.log('Sunucu adı belirtin.');
-                } else if (command === '/kullanici' && parts[1] === 'sil') {
-                    const userName = parts[2];
-                    if (userName) admin.silKullanici(userName);
-                    else console.log('Kullanıcı adı belirtin.');
-                } else if (command === '/duyuru') {
-                    const msg = parts.slice(1).join(' ');
-                    if (msg) admin.duyuru(msg);
-                    else console.log('Mesaj girin.');
-                } else if (command === '/yardim') {
-                    admin.yardim();
-                } else {
-                    console.log('Bilinmeyen komut. /yardim yazın.');
-                }
-            };
-        }
     </script>
 </body>
 </html>
