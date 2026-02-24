@@ -6,7 +6,6 @@
 <title>Rysu V2</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
@@ -15,7 +14,6 @@
 --bg:#0b0b10;
 --card:#14141c;
 --neon:#00f2ff;
---accent:#bc4eff;
 }
 
 body{
@@ -28,8 +26,8 @@ height:100vh;
 overflow:hidden;
 }
 
-/* LOGIN */
-#login{
+/* REGISTER */
+#register{
 position:fixed;
 inset:0;
 background:black;
@@ -39,7 +37,7 @@ justify-content:center;
 z-index:999;
 }
 
-.login-box{
+.box{
 background:var(--card);
 padding:40px;
 border-radius:20px;
@@ -98,13 +96,12 @@ background:#111;
 
 <body>
 
-<div id="login">
-<div class="login-box">
+<div id="register">
+<div class="box">
 <h2>Rysu</h2>
 <input type="text" id="username" placeholder="Kullanıcı adı">
 <input type="password" id="password" placeholder="Şifre">
-<button onclick="register()">Kayıt Ol</button>
-<button onclick="login()">Giriş Yap</button>
+<button onclick="registerUser()">Başla</button>
 </div>
 </div>
 
@@ -129,87 +126,86 @@ appId:"APPID"
 };
 
 firebase.initializeApp(firebaseConfig);
-
-const auth=firebase.auth();
 const db=firebase.database();
 const storage=firebase.storage();
 
-let user;
+let currentUser=null;
 
-function fakeEmail(username){
-return username+"@rysu.app";
+/* AUTO LOGIN */
+window.onload=()=>{
+const saved=localStorage.getItem("rysu_user");
+if(saved){
+currentUser=JSON.parse(saved);
+document.getElementById("register").style.display="none";
+listenMessages();
 }
+};
 
-function register(){
+/* REGISTER */
+function registerUser(){
 const u=username.value.trim();
 const p=password.value.trim();
 if(!u||!p)return alert("Boş bırakma");
 
-auth.createUserWithEmailAndPassword(fakeEmail(u),p)
-.then(()=>{
-db.ref("users/"+auth.currentUser.uid).set({
-name:u,
+db.ref("users/"+u).once("value").then(snap=>{
+if(snap.exists()){
+alert("Bu kullanıcı adı alınmış");
+return;
+}
+
+db.ref("users/"+u).set({
+password:p,
 avatar:"",
-online:true
+created:Date.now()
 });
-})
-.catch(e=>alert(e.message));
-}
 
-function login(){
-const u=username.value.trim();
-const p=password.value.trim();
+currentUser={name:u};
+localStorage.setItem("rysu_user",JSON.stringify(currentUser));
 
-auth.signInWithEmailAndPassword(fakeEmail(u),p)
-.catch(e=>alert("Hatalı giriş"));
-}
-
-auth.onAuthStateChanged(u=>{
-if(u){
-user=u;
-document.getElementById("login").style.display="none";
+document.getElementById("register").style.display="none";
 listenMessages();
-}
 });
+}
 
+/* SEND MESSAGE */
 function sendMessage(){
 const text=msgInput.value;
 if(!text)return;
 
 db.ref("messages/global").push({
-uid:user.uid,
+user:currentUser.name,
 text:text,
 time:Date.now()
 });
+
 msgInput.value="";
 }
 
+/* LISTEN */
 function listenMessages(){
 db.ref("messages/global").on("value",snap=>{
 messages.innerHTML="";
 snap.forEach(m=>{
 const d=m.val();
-db.ref("users/"+d.uid).once("value").then(u=>{
-const data=u.val();
 messages.innerHTML+=`
 <div class="msg">
-<b>${data.name}</b><br>
+<b>${d.user}</b><br>
 ${d.text}
 </div>
 `;
 });
 });
-});
 }
 
-/* DOSYA */
+/* FILE UPLOAD */
 fileInput.addEventListener("change",e=>{
 const file=e.target.files[0];
 const ref=storage.ref("files/"+Date.now()+"_"+file.name);
+
 ref.put(file).then(s=>{
 s.ref.getDownloadURL().then(url=>{
 db.ref("messages/global").push({
-uid:user.uid,
+user:currentUser.name,
 text:"<a href='"+url+"' target='_blank'>Dosya</a>"
 });
 });
