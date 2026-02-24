@@ -6,88 +6,94 @@
     <title>Rysu | Global</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="https://8x8.vc/vpaas-magic-cookie-406159c9053c4562b79a6d91f24d2716/external_api.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
     <style>
         :root {
-            --bg-main: #0f0f13;
-            --glass: rgba(255, 255, 255, 0.03);
-            --neon: #7d5fff;
+            --bg-main: #0a0a0c;
+            --glass: rgba(255, 255, 255, 0.05);
+            --neon: #00f2ff; /* Yeni Neon Turkuaz */
+            --accent: #7d5fff;
             --text: #e1e1e6;
         }
 
-        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-main); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg-main); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
 
-        /* --- LOGO VE SOL BAR --- */
-        .server-sidebar {
-            width: 72px; background: #050505; display: flex; flex-direction: column; align-items: center; padding: 15px 0; gap: 12px; border-right: 1px solid rgba(255,255,255,0.05);
+        /* --- ŞEKİLLİ RYSU LOGOSU --- */
+        .rysu-logo-wrapper {
+            position: relative; width: 50px; height: 50px; margin-bottom: 20px; cursor: pointer;
         }
-        
-        /* RYSU LOGO */
-        .rysu-logo {
-            width: 50px; height: 50px; background: linear-gradient(45deg, var(--neon), #3d1dff); border-radius: 16px; 
-            display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 24px; color: white;
-            box-shadow: 0 0 15px rgba(125, 95, 255, 0.4); margin-bottom: 10px; cursor: pointer;
+        .rysu-shape {
+            position: absolute; inset: 0; background: linear-gradient(135deg, var(--neon), var(--accent));
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); /* Hexagon Şekli */
+            display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 22px; color: #000;
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.5); transition: 0.3s;
         }
+        .rysu-logo-wrapper:hover .rysu-shape { transform: rotate(10deg) scale(1.1); }
 
-        .server-btn {
-            width: 48px; height: 48px; background: var(--glass); border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: 0.3s; font-size: 20px; border: 1px solid rgba(255,255,255,0.1);
+        /* --- MODAL (Sunucu Adı Girin Ekranı) --- */
+        #server-modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 10000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);
         }
-        .server-btn:hover { border-radius: 15px; background: var(--neon); color: white; }
+        .modal-box { background: #16161a; padding: 30px; border-radius: 20px; border: 1px solid var(--neon); text-align: center; width: 350px; }
+        .modal-box input { width: 90%; padding: 12px; margin: 15px 0; background: #0a0a0c; border: 1px solid #333; color: white; border-radius: 8px; outline: none; }
 
-        /* --- KANAL LİSTESİ --- */
-        .channel-sidebar {
-            width: 240px; background: rgba(15, 15, 19, 0.95); display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.05);
-        }
-        .sidebar-header { padding: 20px; font-weight: bold; font-size: 18px; display: flex; justify-content: space-between; align-items: center; }
-        .channel-item { padding: 10px 15px; margin: 2px 10px; border-radius: 6px; cursor: pointer; color: #949ba4; transition: 0.2s; }
-        .channel-item:hover { background: var(--glass); color: var(--text); }
-        .channel-item.active { background: rgba(125, 95, 255, 0.1); color: var(--neon); }
+        /* --- SIDEBARLAR --- */
+        .server-sidebar { width: 72px; background: #050505; display: flex; flex-direction: column; align-items: center; padding: 15px 0; gap: 12px; border-right: 1px solid #111; }
+        .server-btn { width: 48px; height: 48px; background: var(--glass); border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.05); }
+        .server-btn:hover { border-color: var(--neon); background: rgba(0, 242, 255, 0.1); }
 
-        /* --- ANA CHAT --- */
-        .main-chat { flex: 1; display: flex; flex-direction: column; background: radial-gradient(circle at top right, #1a1a2e, #0f0f13); }
-        .chat-header { height: 60px; display: flex; align-items: center; padding: 0 25px; border-bottom: 1px solid rgba(255,255,255,0.05); justify-content: space-between; }
-        .messages { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .channel-sidebar { width: 240px; background: #0f0f13; border-right: 1px solid #111; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid #111; font-weight: bold; display: flex; justify-content: space-between; align-items: center; color: var(--neon); }
 
-        /* Mesaj Tasarımı */
-        .msg { display: flex; gap: 15px; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .msg img { width: 42px; height: 42px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .msg-info b { color: var(--neon); font-size: 14px; margin-right: 8px; }
-        .msg-text { background: var(--glass); padding: 12px 16px; border-radius: 0 15px 15px 15px; font-size: 15px; max-width: 600px; line-height: 1.5; border: 1px solid rgba(255,255,255,0.02); }
+        /* --- MESAJ ALANI --- */
+        .main-chat { flex: 1; display: flex; flex-direction: column; }
+        .messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .msg { display: flex; gap: 12px; }
+        .msg img.pfp { width: 40px; height: 40px; border-radius: 10px; }
+        .msg-content { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.02); }
+        .msg-content b { color: var(--neon); font-size: 13px; display: block; margin-bottom: 4px; }
+        .shared-img { max-width: 300px; border-radius: 10px; margin-top: 8px; border: 1px solid #333; }
 
-        /* Giriş Kutusu */
-        .input-area { padding: 25px; }
-        .input-wrapper { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); display: flex; }
-        input { background: transparent; border: none; color: white; flex: 1; outline: none; font-size: 16px; }
+        /* --- INPUT VE DOSYA --- */
+        .input-area { padding: 20px; display: flex; gap: 10px; align-items: center; }
+        .input-container { flex: 1; background: #16161a; padding: 12px 18px; border-radius: 12px; display: flex; border: 1px solid #222; }
+        .input-container input { background: transparent; border: none; color: white; flex: 1; outline: none; }
+        .file-btn { cursor: pointer; font-size: 20px; color: var(--neon); transition: 0.3s; }
+        .file-btn:hover { transform: scale(1.2); }
 
-        /* Butonlar */
-        .action-btn { background: var(--glass); border: none; color: white; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .action-btn:hover { background: var(--neon); }
+        .action-btn { background: var(--neon); color: #000; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
-        /* KAYIT EKRANI */
-        #auth-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        .auth-card { background: #0f0f13; padding: 50px; border-radius: 25px; text-align: center; border: 1px solid var(--neon); }
-
-        #voice-panel { position: absolute; top: 70px; right: 20px; width: 300px; height: 400px; background: #050505; border-radius: 20px; display: none; border: 1px solid var(--neon); overflow: hidden; }
+        #auth-screen { position: fixed; inset: 0; background: #000; z-index: 11000; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
     <div id="auth-screen">
-        <div class="auth-card">
-            <div class="rysu-logo" style="margin: 0 auto 20px; width: 80px; height: 80px; font-size: 40px;">R</div>
-            <h1>Rysu'ya Giriş Yap</h1>
-            <input type="text" id="username-in" placeholder="Kullanıcı Adın..." style="background:#1a1a2e; padding:15px; border-radius:10px; margin-bottom:15px; width:250px;"><br>
-            <button class="action-btn" onclick="login()">Sisteme Gir</button>
+        <div class="modal-box" style="width: 300px;">
+            <div class="rysu-logo-wrapper" style="margin: 0 auto 20px;"><div class="rysu-shape">R</div></div>
+            <h2>Rysu Global</h2>
+            <input type="text" id="username-in" placeholder="Kullanıcı Adın...">
+            <button class="action-btn" onclick="login()" style="width:100%">Giriş Yap</button>
+        </div>
+    </div>
+
+    <div id="server-modal">
+        <div class="modal-box">
+            <h3>Yeni Sunucu Oluştur</h3>
+            <p style="font-size: 12px; color: #888;">Sunucunun adını belirle ve dünyanı kur.</p>
+            <input type="text" id="new-server-name" placeholder="Sunucu adı...">
+            <div style="display:flex; gap:10px; justify-content: center;">
+                <button class="action-btn" onclick="confirmAddServer()">Oluştur</button>
+                <button class="action-btn" style="background:#333; color:white;" onclick="closeModal()">İptal</button>
+            </div>
         </div>
     </div>
 
     <div class="server-sidebar">
-        <div class="rysu-logo">R</div>
+        <div class="rysu-logo-wrapper"><div class="rysu-shape">R</div></div>
         <div id="server-list"></div>
-        <div class="server-btn" onclick="addServer()">+</div>
+        <div class="server-btn" onclick="openModal()" style="font-size: 24px; color: var(--neon);">+</div>
     </div>
 
     <div class="channel-sidebar">
@@ -95,24 +101,20 @@
             <span id="active-server-name">Sunucu Seç</span>
             <span style="cursor:pointer" onclick="addChannel()">+</span>
         </div>
-        <div id="channel-list" class="channel-list"></div>
+        <div id="channel-list" style="padding: 10px;"></div>
     </div>
 
     <div class="main-chat">
-        <div class="chat-header">
+        <div class="sidebar-header" style="height: 60px; border-bottom: 1px solid #111;">
             <span id="active-channel-name"># genel</span>
-            <div>
-                <button class="action-btn" onclick="toggleVoice()">🎤 Sesli Arama</button>
-            </div>
         </div>
-
-        <div id="voice-panel"></div>
-
         <div class="messages" id="msg-list"></div>
-
         <div class="input-area">
-            <div class="input-wrapper">
-                <input type="text" id="msg-input" placeholder="Mesajınızı buraya yazın...">
+            <label class="file-btn" title="Dosya Gönder">
+                📎<input type="file" id="file-input" style="display:none" onchange="uploadFile(this)">
+            </label>
+            <div class="input-container">
+                <input type="text" id="msg-input" placeholder="Mesaj gönder veya dosya ekle...">
             </div>
         </div>
     </div>
@@ -123,6 +125,7 @@
             authDomain: "rysu-server.firebaseapp.com",
             projectId: "rysu-server",
             databaseURL: "https://rysu-server-default-rtdb.firebaseio.com",
+            storageBucket: "rysu-server.appspot.com", // Storage'ı aktif etmen gerekebilir
             appId: "1:253844771451:web:bd370ae5a93eae66fcc8de"
         };
         firebase.initializeApp(firebaseConfig);
@@ -131,7 +134,6 @@
         let currentUser = localStorage.getItem('rysu_name');
         let currentServer = 'Global';
         let currentChannel = 'genel';
-        let voiceApi = null;
 
         if(currentUser) document.getElementById('auth-screen').style.display = 'none';
 
@@ -142,10 +144,16 @@
             location.reload();
         }
 
-        // --- SUNUCU SİSTEMİ ---
-        function addServer() {
-            const sName = prompt("Sunucu Adı:");
-            if(sName) db.ref('servers/' + sName).set({ name: sName, icon: sName[0].toUpperCase() });
+        // --- MODAL KONTROLLERİ ---
+        function openModal() { document.getElementById('server-modal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('server-modal').style.display = 'none'; }
+
+        function confirmAddServer() {
+            const sName = document.getElementById('new-server-name').value;
+            if(sName) {
+                db.ref('servers/' + sName).set({ name: sName, icon: sName[0].toUpperCase() });
+                closeModal();
+            }
         }
 
         db.ref('servers').on('value', snap => {
@@ -163,7 +171,6 @@
             loadChannels();
         }
 
-        // --- KANAL SİSTEMİ ---
         function addChannel() {
             const cName = prompt("Kanal Adı:");
             if(cName) db.ref('channels/' + currentServer + '/' + cName).set({ name: cName });
@@ -175,7 +182,7 @@
                 list.innerHTML = "";
                 snap.forEach(c => {
                     const data = c.val();
-                    list.innerHTML += `<div class="channel-item" onclick="switchChannel('${data.name}')"># ${data.name}</div>`;
+                    list.innerHTML += `<div style="padding:10px; cursor:pointer" onclick="switchChannel('${data.name}')"># ${data.name}</div>`;
                 });
             });
         }
@@ -186,31 +193,33 @@
             listenMessages();
         }
 
-        // --- SESLİ ARAMA (Jitsi Audio-Only) ---
-        function toggleVoice() {
-            const panel = document.getElementById('voice-panel');
-            if(panel.style.display === 'block') {
-                panel.style.display = 'none';
-                if(voiceApi) voiceApi.dispose();
-            } else {
-                panel.style.display = 'block';
-                voiceApi = new JitsiMeetExternalAPI("8x8.vc", {
-                    roomName: "Rysu-Voice-" + currentServer + "-" + currentChannel,
-                    parentNode: panel,
-                    configOverwrite: { startWithVideoMuted: true }, // Kamerayı kapat, sadece ses
-                    userInfo: { displayName: currentUser }
-                });
-            }
+        // --- DOSYA VE MESAJ SİSTEMİ ---
+        async function uploadFile(input) {
+            const file = input.files[0];
+            if(!file) return;
+            
+            // Dosyayı Base64 olarak gönderiyoruz (Basitlik için, büyük dosyalar için Storage önerilir)
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const isImage = file.type.startsWith('image/');
+                sendMessage(e.target.result, isImage ? 'image' : 'file', file.name);
+            };
+            reader.readAsDataURL(file);
         }
 
-        // --- MESAJLAR ---
+        function sendMessage(content, type = 'text', fileName = '') {
+            db.ref('msgs/' + currentServer + '/' + currentChannel).push({
+                user: currentUser,
+                content: content,
+                type: type,
+                fileName: fileName,
+                time: Date.now()
+            });
+        }
+
         document.getElementById('msg-input').onkeypress = (e) => {
             if(e.key === 'Enter' && e.target.value.trim() !== "") {
-                db.ref('msgs/' + currentServer + '/' + currentChannel).push({
-                    user: currentUser,
-                    text: e.target.value,
-                    time: Date.now()
-                });
+                sendMessage(e.target.value);
                 e.target.value = "";
             }
         };
@@ -221,12 +230,19 @@
                 list.innerHTML = "";
                 snap.forEach(m => {
                     const d = m.val();
+                    let contentHTML = d.content;
+                    if(d.type === 'image') {
+                        contentHTML = `<img src="${d.content}" class="shared-img">`;
+                    } else if(d.type === 'file') {
+                        contentHTML = `<a href="${d.content}" download="${d.fileName}" style="color:var(--neon)">📁 ${d.fileName}</a>`;
+                    }
+
                     list.innerHTML += `
                         <div class="msg">
-                            <img src="https://api.dicebear.com/7.x/identicon/svg?seed=${d.user}">
+                            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=${d.user}" class="pfp">
                             <div class="msg-content">
                                 <b>${d.user}</b>
-                                <div class="msg-text">${d.text}</div>
+                                ${contentHTML}
                             </div>
                         </div>
                     `;
@@ -235,9 +251,7 @@
             });
         }
 
-        // İlk açılış
         loadChannels();
-        listenMessages();
     </script>
 </body>
 </html>
