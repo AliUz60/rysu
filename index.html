@@ -14,253 +14,177 @@
 }
 
 body{
-    background:#0f1117;
+    background:#313338;
     color:white;
-    display:flex;
-    justify-content:center;
-    align-items:center;
     height:100vh;
+    display:flex;
 }
 
-.card{
-    width:380px;
-    background:#1a1d26;
-    padding:30px;
-    border-radius:20px;
-    box-shadow:0 0 40px rgba(0,0,0,0.6);
+/* SOL SUNUCULAR */
+.servers{
+    width:70px;
+    background:#1e1f22;
+    padding-top:10px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
 }
 
-.logo{
-    text-align:center;
-    margin-bottom:25px;
-}
-
-.logo img{
-    width:120px;
-    filter:none;
-}
-
-input, button{
-    width:100%;
-    padding:14px;
-    border:none;
-    border-radius:12px;
-    margin-top:10px;
-    font-size:15px;
-}
-
-input{
-    background:#2a2f3d;
-    color:white;
-}
-
-button{
-    background:linear-gradient(45deg,#5c6cff,#7a4bff);
-    color:white;
-    font-weight:bold;
+.server-icon{
+    width:50px;
+    height:50px;
+    background:#5865F2;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
     cursor:pointer;
     transition:0.2s;
+    font-weight:bold;
 }
 
-button:hover{
-    transform:scale(1.05);
+.server-icon:hover{
+    border-radius:15px;
 }
 
-.section{
-    display:none;
+/* KANAL PANELİ */
+.channels{
+    width:240px;
+    background:#2b2d31;
+    padding:15px;
 }
 
-.list{
-    max-height:150px;
+.channels h3{
+    margin-bottom:10px;
+    font-size:14px;
+    color:#aaa;
+}
+
+.channel{
+    padding:8px;
+    border-radius:5px;
+    cursor:pointer;
+    color:#ccc;
+}
+
+.channel:hover{
+    background:#3a3c42;
+    color:white;
+}
+
+/* CHAT */
+.chat{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    background:#313338;
+}
+
+.messages{
+    flex:1;
+    padding:20px;
     overflow-y:auto;
-    margin-top:10px;
-    background:#2a2f3d;
-    padding:10px;
-    border-radius:10px;
 }
 
-.list div{
-    padding:6px;
-    background:#1e2230;
-    margin-top:5px;
+.message{
+    margin-bottom:10px;
+}
+
+.message span{
+    font-weight:bold;
+    color:#5865F2;
+}
+
+.input-area{
+    padding:15px;
+    background:#383a40;
+    display:flex;
+}
+
+.input-area input{
+    flex:1;
+    padding:12px;
+    border:none;
     border-radius:8px;
+    background:#2b2d31;
+    color:white;
+}
+
+.input-area button{
+    margin-left:10px;
+    padding:12px 18px;
+    border:none;
+    border-radius:8px;
+    background:#5865F2;
+    color:white;
     cursor:pointer;
 }
 
-.msg-box{
-    max-height:120px;
-    overflow-y:auto;
-    background:#2a2f3d;
-    padding:10px;
-    border-radius:10px;
-    margin-top:10px;
+/* ÜYELER */
+.members{
+    width:200px;
+    background:#2b2d31;
+    padding:15px;
 }
 
-.msg{
-    background:#1e2230;
+.member{
     padding:6px;
-    margin-top:5px;
-    border-radius:6px;
-    font-size:13px;
+    font-size:14px;
+    color:#ccc;
 }
 </style>
 </head>
-
 <body>
 
-<div class="card">
-
-<!-- LOGIN -->
-<div id="login">
-<div class="logo">
-<img src="https://i.imgur.com/udb7Ih7.jpeg">
+<!-- SUNUCULAR -->
+<div class="servers">
+    <div class="server-icon">R</div>
+    <div class="server-icon">+</div>
 </div>
 
-<input type="text" id="username" placeholder="Kullanıcı adı">
-<button onclick="startApp()">Başla</button>
+<!-- KANALLAR -->
+<div class="channels">
+    <h3>METİN KANALLARI</h3>
+    <div class="channel"># genel</div>
+    <div class="channel"># sohbet</div>
+    <div class="channel"># oyun</div>
 </div>
 
-<!-- MAIN -->
-<div id="main" class="section">
-
-<h3>Sunucu Oluştur</h3>
-<input type="text" id="serverName" placeholder="Sunucu adı">
-<button onclick="createServer()">Oluştur</button>
-
-<h3 style="margin-top:15px;">Sunucular</h3>
-<div id="serverList" class="list"></div>
-
-<hr style="margin:15px 0; border:1px solid #333;">
-
-<h3>Arkadaş Ekle</h3>
-<input type="text" id="friendName" placeholder="Kullanıcı adı">
-<button onclick="addFriend()">Ekle</button>
-
-<h3 style="margin-top:15px;">Arkadaşlar</h3>
-<div id="friendList" class="list"></div>
-
+<!-- CHAT -->
+<div class="chat">
+    <div class="messages" id="messages"></div>
+    <div class="input-area">
+        <input type="text" id="msgInput" placeholder="Mesaj yaz...">
+        <button onclick="sendMessage()">Gönder</button>
+    </div>
 </div>
 
-<!-- DM -->
-<div id="dmSection" class="section">
-<h3 id="dmTitle"></h3>
-
-<div id="messages" class="msg-box"></div>
-
-<input type="text" id="dmInput" placeholder="Mesaj yaz...">
-<button onclick="sendMessage()">Gönder</button>
-<button onclick="back()">Geri</button>
-</div>
-
+<!-- ÜYELER -->
+<div class="members">
+    <h3 style="font-size:14px;color:#aaa;margin-bottom:10px;">ÜYELER</h3>
+    <div class="member">Ali</div>
+    <div class="member">Mehmet</div>
+    <div class="member">Ayşe</div>
 </div>
 
 <script>
 
-let currentUser = "";
-let currentDM = "";
-
-function startApp(){
-    let name = document.getElementById("username").value;
-    if(name.trim()=="") return alert("Kullanıcı adı gir!");
-    currentUser = name;
-
-    localStorage.setItem("currentUser", name);
-
-    document.getElementById("login").style.display="none";
-    document.getElementById("main").style.display="block";
-
-    loadServers();
-    loadFriends();
-}
-
-function createServer(){
-    let name = document.getElementById("serverName").value;
-    if(name.trim()=="") return;
-
-    let servers = JSON.parse(localStorage.getItem("servers")) || [];
-    servers.push(name);
-    localStorage.setItem("servers", JSON.stringify(servers));
-
-    loadServers();
-}
-
-function loadServers(){
-    let list = document.getElementById("serverList");
-    list.innerHTML="";
-
-    let servers = JSON.parse(localStorage.getItem("servers")) || [];
-
-    servers.forEach(s=>{
-        let div = document.createElement("div");
-        div.innerText = s;
-        list.appendChild(div);
-    });
-}
-
-function addFriend(){
-    let name = document.getElementById("friendName").value;
-    if(name.trim()=="") return;
-
-    let friends = JSON.parse(localStorage.getItem(currentUser+"_friends")) || [];
-    if(!friends.includes(name)){
-        friends.push(name);
-        localStorage.setItem(currentUser+"_friends", JSON.stringify(friends));
-    }
-
-    loadFriends();
-}
-
-function loadFriends(){
-    let list = document.getElementById("friendList");
-    list.innerHTML="";
-
-    let friends = JSON.parse(localStorage.getItem(currentUser+"_friends")) || [];
-
-    friends.forEach(f=>{
-        let div = document.createElement("div");
-        div.innerText = f;
-        div.onclick = ()=> openDM(f);
-        list.appendChild(div);
-    });
-}
-
-function openDM(friend){
-    currentDM = friend;
-    document.getElementById("main").style.display="none";
-    document.getElementById("dmSection").style.display="block";
-    document.getElementById("dmTitle").innerText="DM - "+friend;
-    loadMessages();
-}
-
-function loadMessages(){
-    let box = document.getElementById("messages");
-    box.innerHTML="";
-
-    let msgs = JSON.parse(localStorage.getItem(currentUser+"_dm_"+currentDM)) || [];
-
-    msgs.forEach(m=>{
-        let div = document.createElement("div");
-        div.className="msg";
-        div.innerText=m;
-        box.appendChild(div);
-    });
-}
+let currentUser = "Sen";
 
 function sendMessage(){
-    let text = document.getElementById("dmInput").value;
-    if(text.trim()=="") return;
+    let input = document.getElementById("msgInput");
+    if(input.value.trim()=="") return;
 
-    let msgs = JSON.parse(localStorage.getItem(currentUser+"_dm_"+currentDM)) || [];
-    msgs.push(currentUser+": "+text);
-    localStorage.setItem(currentUser+"_dm_"+currentDM, JSON.stringify(msgs));
+    let msgBox = document.getElementById("messages");
 
-    document.getElementById("dmInput").value="";
-    loadMessages();
-}
+    let div = document.createElement("div");
+    div.className="message";
+    div.innerHTML = "<span>"+currentUser+"</span>: "+input.value;
 
-function back(){
-    document.getElementById("dmSection").style.display="none";
-    document.getElementById("main").style.display="block";
+    msgBox.appendChild(div);
+    input.value="";
+    msgBox.scrollTop = msgBox.scrollHeight;
 }
 
 </script>
