@@ -3,250 +3,169 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rysu V2</title>
+<title>Rysu</title>
 
-<!-- FIREBASE COMPAT -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
 <style>
-:root{
---bg:#0b0b10;
---card:#151520;
---neon:#00f2ff;
---text:#fff;
-}
-
-body{
-margin:0;
-background:var(--bg);
-font-family:Segoe UI;
-color:var(--text);
-display:flex;
-height:100vh;
-overflow:hidden;
-}
-
-/* REGISTER SCREEN */
-#register{
-position:fixed;
-inset:0;
-background:#000;
-display:flex;
-align-items:center;
-justify-content:center;
-z-index:999;
-}
-
-.box{
-background:var(--card);
-padding:40px;
-border-radius:20px;
-display:flex;
-flex-direction:column;
-gap:15px;
-width:320px;
-box-shadow:0 0 30px rgba(0,242,255,0.1);
-}
-
-input{
-background:#222;
-border:none;
-padding:12px;
-border-radius:12px;
-color:white;
-font-size:14px;
-}
-
-button{
-background:var(--neon);
-border:none;
-padding:12px;
-border-radius:12px;
-cursor:pointer;
-font-weight:bold;
-transition:0.2s;
-}
-
-button:hover{
-filter:brightness(1.2);
-}
-
-/* CHAT */
-.chat{
-flex:1;
-display:flex;
-flex-direction:column;
-}
-
-.messages{
-flex:1;
-overflow-y:auto;
-padding:20px;
-display:flex;
-flex-direction:column;
-gap:12px;
-}
-
-.msg{
-background:var(--card);
-padding:12px;
-border-radius:15px;
-animation:fade 0.2s ease;
-}
-
-@keyframes fade{
-from{opacity:0; transform:translateY(5px);}
-to{opacity:1;}
-}
-
-.input-bar{
-display:flex;
-gap:10px;
-padding:15px;
-background:#111;
-}
-
-.file-btn{
-background:#333;
-}
+body{margin:0;background:#0b0b10;color:white;font-family:Segoe UI;display:flex;height:100vh;}
+.servers{width:80px;background:#050507;display:flex;flex-direction:column;align-items:center;padding-top:15px;gap:15px;}
+.server-btn{width:55px;height:55px;border-radius:18px;background:#111;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.server-btn:hover{background:#00f2ff;color:black;}
+.channels{width:220px;background:#111;padding:10px;overflow-y:auto;}
+.chat{flex:1;display:flex;flex-direction:column;}
+.messages{flex:1;overflow-y:auto;padding:20px;}
+.input-bar{display:flex;padding:10px;background:#111;}
+input{flex:1;background:#222;border:none;color:white;padding:10px;border-radius:8px;}
+button{background:#00f2ff;border:none;padding:10px;border-radius:8px;cursor:pointer;}
+.msg{margin-bottom:10px;}
 </style>
 </head>
-
 <body>
 
-<!-- REGISTER -->
-<div id="register">
-<div class="box">
-<h2>Rysu</h2>
-<input type="text" id="username" placeholder="Kullanıcı adı">
-<input type="password" id="password" placeholder="Şifre">
-<button onclick="registerUser()">Başla</button>
-</div>
+<div class="servers" id="serverList">
+<div class="server-btn" onclick="createServer()">+</div>
 </div>
 
-<!-- CHAT -->
+<div class="channels">
+<h3 id="serverName">Sunucu</h3>
+<div id="channelList"></div>
+<hr>
+<button onclick="addFriend()">Arkadaş Ekle</button>
+<div id="friendList"></div>
+</div>
+
 <div class="chat">
 <div class="messages" id="messages"></div>
-
 <div class="input-bar">
-<input type="text" id="msgInput" placeholder="Mesaj yaz...">
+<input id="msgInput" placeholder="Mesaj...">
 <button onclick="sendMessage()">Gönder</button>
-<input type="file" id="fileInput" style="display:none">
-<button class="file-btn" onclick="fileInput.click()">📎</button>
-<button style="background:#ff4d4d;" onclick="logout()">Çıkış</button>
 </div>
 </div>
 
 <script>
-/* FIREBASE CONFIG */
-const firebaseConfig = {
-  apiKey: "AIzaSyCXca2LRaHFx6iZX9vhfe6lXMS9UY5nO54",
-  authDomain: "rysu-server.firebaseapp.com",
-  databaseURL: "https://rysu-server-default-rtdb.firebaseio.com",
-  projectId: "rysu-server",
-  storageBucket: "rysu-server.firebasestorage.app",
-  messagingSenderId: "253844771451",
-  appId: "1:253844771451:web:bd370ae5a93eae66fcc8de"
+const firebaseConfig={
+apiKey:"AIzaSyCXca2LRaHFx6iZX9vhfe6lXMS9UY5nO54",
+databaseURL:"https://rysu-server-default-rtdb.firebaseio.com",
+projectId:"rysu-server"
 };
 
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const storage = firebase.storage();
+const db=firebase.database();
 
-let currentUser = null;
-
-/* AUTO LOGIN */
-window.onload = () => {
-  const saved = localStorage.getItem("rysu_user");
-  if(saved){
-    currentUser = JSON.parse(saved);
-    document.getElementById("register").style.display="none";
-    listenMessages();
-  }
-};
-
-/* REGISTER */
-function registerUser(){
-  const u = username.value.trim();
-  const p = password.value.trim();
-  if(!u || !p) return alert("Boş bırakma");
-
-  db.ref("users/"+u).once("value").then(snap=>{
-    if(snap.exists()){
-      alert("Bu kullanıcı adı alınmış");
-      return;
-    }
-
-    db.ref("users/"+u).set({
-      password:p,
-      created:Date.now()
-    });
-
-    currentUser = {name:u};
-    localStorage.setItem("rysu_user",JSON.stringify(currentUser));
-
-    document.getElementById("register").style.display="none";
-    listenMessages();
-  });
+let currentUser=localStorage.getItem("rysu_user");
+if(!currentUser){
+currentUser=prompt("Kullanıcı adın:");
+localStorage.setItem("rysu_user",currentUser);
 }
 
-/* SEND MESSAGE */
+let currentServer=null;
+let currentChannel=null;
+
+/* SERVER LIST */
+db.ref("servers").on("value",snap=>{
+serverList.innerHTML='<div class="server-btn" onclick="createServer()">+</div>';
+snap.forEach(s=>{
+if(s.val().members && s.val().members[currentUser]){
+serverList.innerHTML+=`<div class="server-btn" onclick="openServer('${s.key}')">${s.val().name[0]}</div>`;
+}
+});
+});
+
+/* CREATE SERVER */
+function createServer(){
+const name=prompt("Sunucu adı:");
+if(!name)return;
+
+const id="srv_"+Date.now();
+
+db.ref("servers/"+id).set({
+name:name,
+owner:currentUser,
+members:{[currentUser]:true},
+channels:{genel:true}
+});
+}
+
+/* OPEN SERVER */
+function openServer(id){
+currentServer=id;
+db.ref("servers/"+id).once("value").then(snap=>{
+serverName.innerText=snap.val().name;
+});
+
+db.ref("servers/"+id+"/channels").on("value",snap=>{
+channelList.innerHTML="";
+snap.forEach(c=>{
+channelList.innerHTML+=`<div onclick="openChannel('${c.key}')"># ${c.key}</div>`;
+});
+});
+}
+
+/* OPEN CHANNEL */
+function openChannel(ch){
+currentChannel=ch;
+listenMessages();
+}
+
+/* MESSAGES */
 function sendMessage(){
-  const text = msgInput.value;
-  if(!text) return;
-
-  db.ref("messages/global").push({
-    user:currentUser.name,
-    text:text,
-    time:Date.now()
-  });
-
-  msgInput.value="";
+if(!currentServer||!currentChannel)return;
+db.ref("messages/"+currentServer+"/"+currentChannel).push({
+user:currentUser,
+text:msgInput.value
+});
+msgInput.value="";
 }
 
-msgInput.addEventListener("keypress",e=>{
-  if(e.key==="Enter") sendMessage();
-});
-
-/* LISTEN */
 function listenMessages(){
-  db.ref("messages/global").on("value",snap=>{
-    messages.innerHTML="";
-    snap.forEach(m=>{
-      const d=m.val();
-      messages.innerHTML+=`
-      <div class="msg">
-      <b>${d.user}</b><br>
-      ${d.text}
-      </div>`;
-    });
-    messages.scrollTop=messages.scrollHeight;
-  });
+db.ref("messages/"+currentServer+"/"+currentChannel).on("value",snap=>{
+messages.innerHTML="";
+snap.forEach(m=>{
+const d=m.val();
+messages.innerHTML+=`<div class="msg"><b>${d.user}</b>: ${d.text}</div>`;
+});
+});
 }
 
-/* FILE UPLOAD */
-fileInput.addEventListener("change",e=>{
-  const file=e.target.files[0];
-  if(!file) return;
+/* FRIEND SYSTEM */
+function addFriend(){
+const name=prompt("Kullanıcı adı:");
+if(!name)return;
 
-  const ref=storage.ref("files/"+Date.now()+"_"+file.name);
+db.ref("users/"+currentUser+"/friends/"+name).set(true);
+db.ref("users/"+name+"/friends/"+currentUser).set(true);
+}
 
-  ref.put(file).then(s=>{
-    s.ref.getDownloadURL().then(url=>{
-      db.ref("messages/global").push({
-        user:currentUser.name,
-        text:`<a href="${url}" target="_blank">📎 ${file.name}</a>`
-      });
-    });
-  });
+db.ref("users/"+currentUser+"/friends").on("value",snap=>{
+friendList.innerHTML="<h4>Arkadaşlar</h4>";
+snap.forEach(f=>{
+friendList.innerHTML+=`<div onclick="openDM('${f.key}')">@ ${f.key}</div>`;
+});
 });
 
-/* LOGOUT */
-function logout(){
-  localStorage.removeItem("rysu_user");
-  location.reload();
+/* DM */
+function openDM(friend){
+currentServer=null;
+currentChannel=null;
+const id=[currentUser,friend].sort().join("_");
+
+db.ref("dms/"+id).on("value",snap=>{
+messages.innerHTML="";
+snap.forEach(m=>{
+const d=m.val();
+messages.innerHTML+=`<div class="msg"><b>${d.user}</b>: ${d.text}</div>`;
+});
+});
+
+sendMessage=function(){
+db.ref("dms/"+id).push({
+user:currentUser,
+text:msgInput.value
+});
+msgInput.value="";
+};
 }
 </script>
 
