@@ -3,199 +3,241 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rysu | Pro Sohbet</title>
+    <title>Rysu | Global</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://8x8.vc/vpaas-magic-cookie-406159c9053c4562b79a6d91f24d2716/external_api.js"></script>
 
     <style>
-        :root { --bg: #313338; --sidebar: #2b2d31; --dark: #1e1f22; --accent: #5865f2; --text: #dbdee1; --input: #383a40; }
-        body { margin: 0; font-family: sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
+        :root {
+            --bg-main: #0f0f13;
+            --glass: rgba(255, 255, 255, 0.03);
+            --neon: #7d5fff;
+            --text: #e1e1e6;
+        }
+
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-main); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
+
+        /* --- LOGO VE SOL BAR --- */
+        .server-sidebar {
+            width: 72px; background: #050505; display: flex; flex-direction: column; align-items: center; padding: 15px 0; gap: 12px; border-right: 1px solid rgba(255,255,255,0.05);
+        }
         
+        /* RYSU LOGO */
+        .rysu-logo {
+            width: 50px; height: 50px; background: linear-gradient(45deg, var(--neon), #3d1dff); border-radius: 16px; 
+            display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 24px; color: white;
+            box-shadow: 0 0 15px rgba(125, 95, 255, 0.4); margin-bottom: 10px; cursor: pointer;
+        }
+
+        .server-btn {
+            width: 48px; height: 48px; background: var(--glass); border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.3s; font-size: 20px; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .server-btn:hover { border-radius: 15px; background: var(--neon); color: white; }
+
+        /* --- KANAL LİSTESİ --- */
+        .channel-sidebar {
+            width: 240px; background: rgba(15, 15, 19, 0.95); display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.05);
+        }
+        .sidebar-header { padding: 20px; font-weight: bold; font-size: 18px; display: flex; justify-content: space-between; align-items: center; }
+        .channel-item { padding: 10px 15px; margin: 2px 10px; border-radius: 6px; cursor: pointer; color: #949ba4; transition: 0.2s; }
+        .channel-item:hover { background: var(--glass); color: var(--text); }
+        .channel-item.active { background: rgba(125, 95, 255, 0.1); color: var(--neon); }
+
+        /* --- ANA CHAT --- */
+        .main-chat { flex: 1; display: flex; flex-direction: column; background: radial-gradient(circle at top right, #1a1a2e, #0f0f13); }
+        .chat-header { height: 60px; display: flex; align-items: center; padding: 0 25px; border-bottom: 1px solid rgba(255,255,255,0.05); justify-content: space-between; }
+        .messages { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+
+        /* Mesaj Tasarımı */
+        .msg { display: flex; gap: 15px; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .msg img { width: 42px; height: 42px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .msg-info b { color: var(--neon); font-size: 14px; margin-right: 8px; }
+        .msg-text { background: var(--glass); padding: 12px 16px; border-radius: 0 15px 15px 15px; font-size: 15px; max-width: 600px; line-height: 1.5; border: 1px solid rgba(255,255,255,0.02); }
+
+        /* Giriş Kutusu */
+        .input-area { padding: 25px; }
+        .input-wrapper { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); display: flex; }
+        input { background: transparent; border: none; color: white; flex: 1; outline: none; font-size: 16px; }
+
+        /* Butonlar */
+        .action-btn { background: var(--glass); border: none; color: white; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .action-btn:hover { background: var(--neon); }
+
         /* KAYIT EKRANI */
-        #register-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .register-box { background: #1e1f22; padding: 40px; border-radius: 8px; width: 350px; text-align: center; }
-        #pfp-preview { width: 100px; height: 100px; border-radius: 50%; background: var(--accent); margin: 0 auto 15px; cursor: pointer; border: 3px solid var(--accent); overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        #pfp-preview img { width: 100%; height: 100%; object-fit: cover; }
-        input[type="text"] { width: 90%; padding: 12px; margin: 10px 0; background: var(--input); border: none; color: white; border-radius: 4px; outline: none; }
-        
-        /* ANA UYGULAMA */
-        #app { display: none; width: 100%; height: 100%; }
-        .sidebar { width: 260px; background: var(--sidebar); display: flex; flex-direction: column; flex-shrink: 0; }
-        .chat-area { flex: 1; display: flex; flex-direction: column; position: relative; }
-        
-        /* Üst Bar (Arama ve Video Butonu) */
-        .top-bar { height: 48px; display: flex; align-items: center; padding: 0 16px; border-bottom: 1px solid #26272d; justify-content: space-between; }
-        .search-box { background: var(--dark); border-radius: 4px; padding: 4px 8px; border: none; color: white; width: 150px; }
-        .video-btn { background: #248046; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        #auth-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .auth-card { background: #0f0f13; padding: 50px; border-radius: 25px; text-align: center; border: 1px solid var(--neon); }
 
-        .messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .msg { display: flex; gap: 10px; }
-        .msg img { width: 35px; height: 35px; border-radius: 50%; }
-        .msg-content { background: var(--input); padding: 8px 12px; border-radius: 8px; font-size: 14px; }
-        .msg-content b { color: var(--accent); display: block; font-size: 12px; }
-
-        /* Video Penceresi */
-        #video-container { position: absolute; top: 50px; right: 20px; width: 400px; height: 300px; background: black; border-radius: 10px; display: none; z-index: 500; border: 2px solid var(--accent); }
-
-        .input-area { padding: 20px; }
-        .input-area input { width: 100%; background: var(--input); border: none; padding: 15px; color: white; border-radius: 8px; outline: none; }
-        
-        #user-bar { padding: 10px; background: #232428; display: flex; align-items: center; gap: 10px; }
-        #user-bar img { width: 32px; height: 32px; border-radius: 50%; }
+        #voice-panel { position: absolute; top: 70px; right: 20px; width: 300px; height: 400px; background: #050505; border-radius: 20px; display: none; border: 1px solid var(--neon); overflow: hidden; }
     </style>
 </head>
 <body>
 
-    <div id="register-screen">
-        <div class="register-box">
-            <h2>Rysu'ya Hoş Geldin</h2>
-            <div id="pfp-preview" onclick="document.getElementById('file-input').click()">
-                <span id="pfp-text">Foto Seç</span>
-                <img id="pfp-img" style="display:none">
-            </div>
-            <input type="file" id="file-input" style="display:none" accept="image/*">
-            <input type="text" id="username-input" placeholder="Kullanıcı adın...">
-            <button style="background:var(--accent); color:white; border:none; padding:12px; width:96%; border-radius:4px; cursor:pointer;" onclick="saveUser()">Başla</button>
+    <div id="auth-screen">
+        <div class="auth-card">
+            <div class="rysu-logo" style="margin: 0 auto 20px; width: 80px; height: 80px; font-size: 40px;">R</div>
+            <h1>Rysu'ya Giriş Yap</h1>
+            <input type="text" id="username-in" placeholder="Kullanıcı Adın..." style="background:#1a1a2e; padding:15px; border-radius:10px; margin-bottom:15px; width:250px;"><br>
+            <button class="action-btn" onclick="login()">Sisteme Gir</button>
         </div>
     </div>
 
-    <div id="app">
-        <div class="sidebar">
-            <div style="padding: 20px; font-weight: bold; font-size: 22px;">RYSU</div>
-            <div style="padding: 15px; flex: 1;">
-                <p style="font-size: 11px; color: #949ba4;">ARKADAŞ EKLE</p>
-                <input type="text" placeholder="Arkadaş ara..." style="width: 85%; background: var(--dark); border:none; padding:8px; color:white; border-radius:4px;">
-            </div>
-            <div id="user-bar">
-                <img id="my-bar-pfp" src="">
-                <span id="my-bar-name"></span>
+    <div class="server-sidebar">
+        <div class="rysu-logo">R</div>
+        <div id="server-list"></div>
+        <div class="server-btn" onclick="addServer()">+</div>
+    </div>
+
+    <div class="channel-sidebar">
+        <div class="sidebar-header">
+            <span id="active-server-name">Sunucu Seç</span>
+            <span style="cursor:pointer" onclick="addChannel()">+</span>
+        </div>
+        <div id="channel-list" class="channel-list"></div>
+    </div>
+
+    <div class="main-chat">
+        <div class="chat-header">
+            <span id="active-channel-name"># genel</span>
+            <div>
+                <button class="action-btn" onclick="toggleVoice()">🎤 Sesli Arama</button>
             </div>
         </div>
 
-        <div class="chat-area">
-            <div class="top-bar">
-                <span># genel-sohbet</span>
-                <div>
-                    <input type="text" id="msg-search" class="search-box" placeholder="Mesajlarda ara..." onkeyup="searchMessages()">
-                    <button class="video-btn" onclick="toggleVideoCall()">📞 Görüntülü Arama</button>
-                </div>
-            </div>
+        <div id="voice-panel"></div>
 
-            <div id="video-container"></div>
+        <div class="messages" id="msg-list"></div>
 
-            <div class="messages" id="msg-list"></div>
-
-            <div class="input-area">
-                <input type="text" id="msg-input" placeholder="Mesajınızı gönderin...">
+        <div class="input-area">
+            <div class="input-wrapper">
+                <input type="text" id="msg-input" placeholder="Mesajınızı buraya yazın...">
             </div>
         </div>
     </div>
 
     <script>
-        // FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyCXca2LRaHFx6iZX9vhfe6lXMS9UY5nO54",
             authDomain: "rysu-server.firebaseapp.com",
             projectId: "rysu-server",
             databaseURL: "https://rysu-server-default-rtdb.firebaseio.com",
-            storageBucket: "rysu-server.firebasestorage.app",
-            messagingSenderId: "253844771451",
             appId: "1:253844771451:web:bd370ae5a93eae66fcc8de"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let myUserData = JSON.parse(localStorage.getItem('rysu_user'));
-        let api = null; // Video için
+        let currentUser = localStorage.getItem('rysu_name');
+        let currentServer = 'Global';
+        let currentChannel = 'genel';
+        let voiceApi = null;
 
-        window.onload = () => { if (myUserData) showApp(); };
+        if(currentUser) document.getElementById('auth-screen').style.display = 'none';
 
-        // Profil Fotoğrafı İşlemi
-        document.getElementById('file-input').onchange = function(e) {
-            const reader = new FileReader();
-            reader.onload = function() {
-                const img = document.getElementById('pfp-img');
-                img.src = reader.result;
-                img.style.display = 'block';
-                document.getElementById('pfp-text').style.display = 'none';
-            };
-            reader.readAsDataURL(e.target.files[0]);
-        };
-
-        function saveUser() {
-            const username = document.getElementById('username-input').value.trim();
-            const pfp = document.getElementById('pfp-img').src;
-            if (!username || !pfp) return alert("Ad ve Foto eksik!");
-            myUserData = { username, pfp };
-            localStorage.setItem('rysu_user', JSON.stringify(myUserData));
-            showApp();
+        function login() {
+            const name = document.getElementById('username-in').value;
+            if(!name) return;
+            localStorage.setItem('rysu_name', name);
+            location.reload();
         }
 
-        function showApp() {
-            document.getElementById('register-screen').style.display = 'none';
-            document.getElementById('app').style.display = 'flex';
-            document.getElementById('my-bar-pfp').src = myUserData.pfp;
-            document.getElementById('my-bar-name').innerText = myUserData.username;
-            listenMessages();
+        // --- SUNUCU SİSTEMİ ---
+        function addServer() {
+            const sName = prompt("Sunucu Adı:");
+            if(sName) db.ref('servers/' + sName).set({ name: sName, icon: sName[0].toUpperCase() });
         }
 
-        // MESAJ ARAMA FONKSİYONU
-        function searchMessages() {
-            const term = document.getElementById('msg-search').value.toLowerCase();
-            const allMsgs = document.querySelectorAll('.msg');
-            allMsgs.forEach(m => {
-                const text = m.innerText.toLowerCase();
-                m.style.display = text.includes(term) ? 'flex' : 'none';
+        db.ref('servers').on('value', snap => {
+            const list = document.getElementById('server-list');
+            list.innerHTML = "";
+            snap.forEach(s => {
+                const data = s.val();
+                list.innerHTML += `<div class="server-btn" onclick="switchServer('${data.name}')">${data.icon}</div>`;
+            });
+        });
+
+        function switchServer(name) {
+            currentServer = name;
+            document.getElementById('active-server-name').innerText = name;
+            loadChannels();
+        }
+
+        // --- KANAL SİSTEMİ ---
+        function addChannel() {
+            const cName = prompt("Kanal Adı:");
+            if(cName) db.ref('channels/' + currentServer + '/' + cName).set({ name: cName });
+        }
+
+        function loadChannels() {
+            db.ref('channels/' + currentServer).on('value', snap => {
+                const list = document.getElementById('channel-list');
+                list.innerHTML = "";
+                snap.forEach(c => {
+                    const data = c.val();
+                    list.innerHTML += `<div class="channel-item" onclick="switchChannel('${data.name}')"># ${data.name}</div>`;
+                });
             });
         }
 
-        // GÖRÜNTÜLÜ ARAMA (Jitsi Meet)
-        function toggleVideoCall() {
-            const container = document.getElementById('video-container');
-            if (container.style.display === 'block') {
-                container.style.display = 'none';
-                if(api) api.dispose();
+        function switchChannel(name) {
+            currentChannel = name;
+            document.getElementById('active-channel-name').innerText = "# " + name;
+            listenMessages();
+        }
+
+        // --- SESLİ ARAMA (Jitsi Audio-Only) ---
+        function toggleVoice() {
+            const panel = document.getElementById('voice-panel');
+            if(panel.style.display === 'block') {
+                panel.style.display = 'none';
+                if(voiceApi) voiceApi.dispose();
             } else {
-                container.style.display = 'block';
-                const domain = "8x8.vc";
-                const options = {
-                    roomName: "Rysu-Ozel-Oda-123", // Herkes aynı odaya bağlanır
-                    width: "100%",
-                    height: "100%",
-                    parentNode: container,
-                    userInfo: { displayName: myUserData.username }
-                };
-                api = new JitsiMeetExternalAPI(domain, options);
+                panel.style.display = 'block';
+                voiceApi = new JitsiMeetExternalAPI("8x8.vc", {
+                    roomName: "Rysu-Voice-" + currentServer + "-" + currentChannel,
+                    parentNode: panel,
+                    configOverwrite: { startWithVideoMuted: true }, // Kamerayı kapat, sadece ses
+                    userInfo: { displayName: currentUser }
+                });
             }
         }
 
-        // MESAJLAŞMA
+        // --- MESAJLAR ---
         document.getElementById('msg-input').onkeypress = (e) => {
-            if (e.key === 'Enter' && e.target.value.trim() !== "") {
-                db.ref('messages').push({
-                    name: myUserData.username,
-                    pfp: myUserData.pfp,
-                    text: e.target.value
+            if(e.key === 'Enter' && e.target.value.trim() !== "") {
+                db.ref('msgs/' + currentServer + '/' + currentChannel).push({
+                    user: currentUser,
+                    text: e.target.value,
+                    time: Date.now()
                 });
                 e.target.value = "";
             }
         };
 
         function listenMessages() {
-            db.ref('messages').limitToLast(50).on('value', (snap) => {
+            db.ref('msgs/' + currentServer + '/' + currentChannel).on('value', snap => {
                 const list = document.getElementById('msg-list');
                 list.innerHTML = "";
-                snap.forEach(child => {
-                    const data = child.val();
-                    const div = document.createElement('div');
-                    div.className = 'msg';
-                    div.innerHTML = `<img src="${data.pfp}"><div class="msg-content"><b>${data.name}</b>${data.text}</div>`;
-                    list.appendChild(div);
+                snap.forEach(m => {
+                    const d = m.val();
+                    list.innerHTML += `
+                        <div class="msg">
+                            <img src="https://api.dicebear.com/7.x/identicon/svg?seed=${d.user}">
+                            <div class="msg-content">
+                                <b>${d.user}</b>
+                                <div class="msg-text">${d.text}</div>
+                            </div>
+                        </div>
+                    `;
                 });
                 list.scrollTop = list.scrollHeight;
             });
         }
+
+        // İlk açılış
+        loadChannels();
+        listenMessages();
     </script>
 </body>
 </html>
