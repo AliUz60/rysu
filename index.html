@@ -3,49 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rysu | Hızlı Sohbet</title>
+    <title>Rysu | Pro Sohbet</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://8x8.vc/vpaas-magic-cookie-406159c9053c4562b79a6d91f24d2716/external_api.js"></script>
 
     <style>
-        :root {
-            --bg: #313338; --sidebar: #2b2d31; --dark: #1e1f22;
-            --accent: #5865f2; --text: #dbdee1; --input: #383a40;
-        }
+        :root { --bg: #313338; --sidebar: #2b2d31; --dark: #1e1f22; --accent: #5865f2; --text: #dbdee1; --input: #383a40; }
         body { margin: 0; font-family: sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
         
         /* KAYIT EKRANI */
         #register-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .register-box { background: #1e1f22; padding: 40px; border-radius: 8px; width: 350px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
-        .register-box h2 { margin-bottom: 20px; }
-        
-        /* Profil Resmi Yükleme Alanı */
-        #pfp-preview { width: 100px; height: 100px; border-radius: 50%; background: var(--accent); margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 3px solid var(--accent); cursor: pointer; }
+        .register-box { background: #1e1f22; padding: 40px; border-radius: 8px; width: 350px; text-align: center; }
+        #pfp-preview { width: 100px; height: 100px; border-radius: 50%; background: var(--accent); margin: 0 auto 15px; cursor: pointer; border: 3px solid var(--accent); overflow: hidden; display: flex; align-items: center; justify-content: center; }
         #pfp-preview img { width: 100%; height: 100%; object-fit: cover; }
-        #file-input { display: none; }
-
         input[type="text"] { width: 90%; padding: 12px; margin: 10px 0; background: var(--input); border: none; color: white; border-radius: 4px; outline: none; }
-        .btn-start { background: var(--accent); color: white; border: none; padding: 12px; width: 96%; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
         
         /* ANA UYGULAMA */
         #app { display: none; width: 100%; height: 100%; }
         .sidebar { width: 260px; background: var(--sidebar); display: flex; flex-direction: column; flex-shrink: 0; }
-        .chat-area { flex: 1; display: flex; flex-direction: column; }
-        .messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .chat-area { flex: 1; display: flex; flex-direction: column; position: relative; }
         
-        /* Mesaj Baloncuğu */
-        .msg { display: flex; gap: 10px; align-items: flex-start; }
-        .msg img { width: 35px; height: 35px; border-radius: 50%; flex-shrink: 0; }
-        .msg-content { background: var(--input); padding: 8px 12px; border-radius: 8px; font-size: 14px; position: relative; }
-        .msg-content b { font-size: 12px; color: var(--accent); display: block; margin-bottom: 3px; }
+        /* Üst Bar (Arama ve Video Butonu) */
+        .top-bar { height: 48px; display: flex; align-items: center; padding: 0 16px; border-bottom: 1px solid #26272d; justify-content: space-between; }
+        .search-box { background: var(--dark); border-radius: 4px; padding: 4px 8px; border: none; color: white; width: 150px; }
+        .video-btn { background: #248046; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
 
-        .input-area { padding: 20px; background: var(--bg); }
+        .messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .msg { display: flex; gap: 10px; }
+        .msg img { width: 35px; height: 35px; border-radius: 50%; }
+        .msg-content { background: var(--input); padding: 8px 12px; border-radius: 8px; font-size: 14px; }
+        .msg-content b { color: var(--accent); display: block; font-size: 12px; }
+
+        /* Video Penceresi */
+        #video-container { position: absolute; top: 50px; right: 20px; width: 400px; height: 300px; background: black; border-radius: 10px; display: none; z-index: 500; border: 2px solid var(--accent); }
+
+        .input-area { padding: 20px; }
         .input-area input { width: 100%; background: var(--input); border: none; padding: 15px; color: white; border-radius: 8px; outline: none; }
         
-        #user-bar { padding: 10px; background: #232428; display: flex; align-items: center; gap: 10px; border-top: 1px solid #202225; }
+        #user-bar { padding: 10px; background: #232428; display: flex; align-items: center; gap: 10px; }
         #user-bar img { width: 32px; height: 32px; border-radius: 50%; }
-
-        @media (max-width: 600px) { .sidebar { display: none; } }
     </style>
 </head>
 <body>
@@ -57,40 +54,51 @@
                 <span id="pfp-text">Foto Seç</span>
                 <img id="pfp-img" style="display:none">
             </div>
-            <input type="file" id="file-input" accept="image/*">
-            <input type="text" id="username-input" placeholder="Kullanıcı adın ne olsun?">
-            <button class="btn-start" onclick="saveUser()">Başla</button>
+            <input type="file" id="file-input" style="display:none" accept="image/*">
+            <input type="text" id="username-input" placeholder="Kullanıcı adın...">
+            <button style="background:var(--accent); color:white; border:none; padding:12px; width:96%; border-radius:4px; cursor:pointer;" onclick="saveUser()">Başla</button>
         </div>
     </div>
 
     <div id="app">
         <div class="sidebar">
-            <div style="padding: 20px; font-weight: bold; font-size: 22px; color: white;">RYSU</div>
+            <div style="padding: 20px; font-weight: bold; font-size: 22px;">RYSU</div>
             <div style="padding: 15px; flex: 1;">
-                <p style="font-size: 11px; color: #949ba4; font-weight: bold; margin-bottom: 10px;">ARKADAŞ EKLE</p>
-                <input type="text" id="add-friend" placeholder="Kullanıcı adı yaz..." style="width: 85%; background: var(--dark); border:none; padding:8px; color:white; border-radius:4px;">
+                <p style="font-size: 11px; color: #949ba4;">ARKADAŞ EKLE</p>
+                <input type="text" placeholder="Arkadaş ara..." style="width: 85%; background: var(--dark); border:none; padding:8px; color:white; border-radius:4px;">
             </div>
             <div id="user-bar">
                 <img id="my-bar-pfp" src="">
-                <span id="my-bar-name" style="font-weight:bold; font-size:14px;"></span>
+                <span id="my-bar-name"></span>
             </div>
         </div>
+
         <div class="chat-area">
-            <div style="height: 48px; display: flex; align-items: center; padding: 0 16px; border-bottom: 1px solid #26272d; font-weight: bold;"># genel-sohbet</div>
+            <div class="top-bar">
+                <span># genel-sohbet</span>
+                <div>
+                    <input type="text" id="msg-search" class="search-box" placeholder="Mesajlarda ara..." onkeyup="searchMessages()">
+                    <button class="video-btn" onclick="toggleVideoCall()">📞 Görüntülü Arama</button>
+                </div>
+            </div>
+
+            <div id="video-container"></div>
+
             <div class="messages" id="msg-list"></div>
+
             <div class="input-area">
-                <input type="text" id="msg-input" placeholder="Buraya bir şeyler yaz...">
+                <input type="text" id="msg-input" placeholder="Mesajınızı gönderin...">
             </div>
         </div>
     </div>
 
     <script>
-        // --- FIREBASE BAĞLANTISI ---
+        // FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyCXca2LRaHFx6iZX9vhfe6lXMS9UY5nO54",
             authDomain: "rysu-server.firebaseapp.com",
             projectId: "rysu-server",
-            databaseURL: "https://rysu-server-default-rtdb.firebaseio.com", // Database URL'ini buraya ekledim
+            databaseURL: "https://rysu-server-default-rtdb.firebaseio.com",
             storageBucket: "rysu-server.firebasestorage.app",
             messagingSenderId: "253844771451",
             appId: "1:253844771451:web:bd370ae5a93eae66fcc8de"
@@ -99,15 +107,11 @@
         const db = firebase.database();
 
         let myUserData = JSON.parse(localStorage.getItem('rysu_user'));
+        let api = null; // Video için
 
-        // Sayfa açıldığında kullanıcı kontrolü
-        window.onload = () => {
-            if (myUserData) {
-                showApp();
-            }
-        };
+        window.onload = () => { if (myUserData) showApp(); };
 
-        // Profil Resmi Yükleme Önizleme
+        // Profil Fotoğrafı İşlemi
         document.getElementById('file-input').onchange = function(e) {
             const reader = new FileReader();
             reader.onload = function() {
@@ -119,23 +123,12 @@
             reader.readAsDataURL(e.target.files[0]);
         };
 
-        // Kullanıcıyı Kaydet (LocalStorage)
         function saveUser() {
             const username = document.getElementById('username-input').value.trim();
             const pfp = document.getElementById('pfp-img').src;
-
-            if (username === "" || !pfp) {
-                alert("Lütfen hem adını seç hem de fotoğrafını yükle!");
-                return;
-            }
-
-            const userData = { username: username, pfp: pfp };
-            localStorage.setItem('rysu_user', JSON.stringify(userData));
-            myUserData = userData;
-            
-            // Firebase'e "Ben buradayım" diye kaydet (başkaları bulabilsin diye)
-            db.ref('users/' + username).set(userData);
-            
+            if (!username || !pfp) return alert("Ad ve Foto eksik!");
+            myUserData = { username, pfp };
+            localStorage.setItem('rysu_user', JSON.stringify(myUserData));
             showApp();
         }
 
@@ -147,20 +140,48 @@
             listenMessages();
         }
 
-        // Mesaj Gönderme
+        // MESAJ ARAMA FONKSİYONU
+        function searchMessages() {
+            const term = document.getElementById('msg-search').value.toLowerCase();
+            const allMsgs = document.querySelectorAll('.msg');
+            allMsgs.forEach(m => {
+                const text = m.innerText.toLowerCase();
+                m.style.display = text.includes(term) ? 'flex' : 'none';
+            });
+        }
+
+        // GÖRÜNTÜLÜ ARAMA (Jitsi Meet)
+        function toggleVideoCall() {
+            const container = document.getElementById('video-container');
+            if (container.style.display === 'block') {
+                container.style.display = 'none';
+                if(api) api.dispose();
+            } else {
+                container.style.display = 'block';
+                const domain = "8x8.vc";
+                const options = {
+                    roomName: "Rysu-Ozel-Oda-123", // Herkes aynı odaya bağlanır
+                    width: "100%",
+                    height: "100%",
+                    parentNode: container,
+                    userInfo: { displayName: myUserData.username }
+                };
+                api = new JitsiMeetExternalAPI(domain, options);
+            }
+        }
+
+        // MESAJLAŞMA
         document.getElementById('msg-input').onkeypress = (e) => {
             if (e.key === 'Enter' && e.target.value.trim() !== "") {
                 db.ref('messages').push({
                     name: myUserData.username,
                     pfp: myUserData.pfp,
-                    text: e.target.value,
-                    time: Date.now()
+                    text: e.target.value
                 });
                 e.target.value = "";
             }
         };
 
-        // Mesajları Canlı Dinle
         function listenMessages() {
             db.ref('messages').limitToLast(50).on('value', (snap) => {
                 const list = document.getElementById('msg-list');
@@ -169,34 +190,12 @@
                     const data = child.val();
                     const div = document.createElement('div');
                     div.className = 'msg';
-                    div.innerHTML = `
-                        <img src="${data.pfp}">
-                        <div class="msg-content">
-                            <b>${data.name}</b>
-                            ${data.text}
-                        </div>
-                    `;
+                    div.innerHTML = `<img src="${data.pfp}"><div class="msg-content"><b>${data.name}</b>${data.text}</div>`;
                     list.appendChild(div);
                 });
                 list.scrollTop = list.scrollHeight;
             });
         }
-
-        // Arkadaş Ekleme (Şimdilik sadece isim kontrolü)
-        document.getElementById('add-friend').onkeypress = (e) => {
-            if(e.key === 'Enter') {
-                const friendName = e.target.value.trim();
-                db.ref('users/' + friendName).once('value').then(snap => {
-                    if(snap.exists()) {
-                        alert(friendName + " bulundu ve eklendi!");
-                        // Burada arkadaş listesi mantığı geliştirilebilir
-                    } else {
-                        alert("Böyle bir kullanıcı bulunamadı.");
-                    }
-                });
-                e.target.value = "";
-            }
-        };
     </script>
 </body>
 </html>
