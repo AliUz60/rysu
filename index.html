@@ -6,174 +6,186 @@
 <title>RYSU V2</title>
 
 <style>
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Segoe UI, sans-serif;
-}
-
-body{
-height:100vh;
-background:#1e1f22;
-color:white;
-overflow:hidden;
-}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI;}
+body{background:#1e1f22;color:white;height:100vh;overflow:hidden}
 
 /* USERNAME MODAL */
-
 #usernameModal{
-position:fixed;
-inset:0;
-background:linear-gradient(135deg,#111214,#1e1f22);
-display:flex;
-justify-content:center;
-align-items:center;
-z-index:999;
+position:fixed;inset:0;
+background:#111214;
+display:flex;justify-content:center;align-items:center;
+z-index:1000;
 }
-
 .card{
 background:#2b2d31;
-padding:45px;
-border-radius:25px;
-width:380px;
+padding:40px;
+border-radius:20px;
+width:350px;
 text-align:center;
-box-shadow:0 20px 60px rgba(0,0,0,0.6);
+}
+.card img{width:150px;margin-bottom:20px}
+.card input{
+width:100%;padding:12px;border:none;border-radius:10px;
+background:#1e1f22;color:white;margin-bottom:15px;
+}
+.card button{
+width:100%;padding:12px;border:none;border-radius:10px;
+background:#5865f2;color:white;cursor:pointer;
 }
 
-.logo{
-width:170px;
-margin-bottom:25px;
-border-radius:12px;
-}
+/* MAIN LAYOUT */
+#app{display:none;height:100vh;display:flex}
 
-.uploadBtn{
-display:block;
-width:100%;
-padding:15px;
-border-radius:14px;
-background:#1e1f22;
-cursor:pointer;
-margin-bottom:18px;
+/* SERVERS */
+.servers{
+width:70px;background:#111214;
+display:flex;flex-direction:column;align-items:center;padding-top:10px;
 }
-
-.uploadBtn input{
-display:none;
-}
-
-input[type="text"]{
-width:100%;
-padding:15px;
-border:none;
-border-radius:14px;
-background:#1e1f22;
-color:white;
-margin-bottom:20px;
-}
-
-button{
-width:100%;
-padding:16px;
-border:none;
-border-radius:14px;
-background:linear-gradient(90deg,#5865f2,#4752c4);
-color:white;
-font-size:16px;
+.server{
+width:50px;height:50px;border-radius:50%;
+background:#2b2d31;margin-bottom:10px;
+display:flex;justify-content:center;align-items:center;
 cursor:pointer;
 }
 
-/* ANA EKRAN */
+/* CHANNELS */
+.channels{
+width:220px;background:#2b2d31;padding:15px;
+display:flex;flex-direction:column;
+}
+.channel{
+padding:8px;border-radius:5px;margin-bottom:5px;
+cursor:pointer;color:#ccc;
+}
+.channel:hover{background:#3f4147}
 
-#mainApp{
-display:none;
-height:100vh;
+/* CHAT */
+.chat{
+flex:1;display:flex;flex-direction:column;
+background:#313338;
+}
+.messages{
+flex:1;padding:20px;overflow-y:auto;
+}
+.message{margin-bottom:10px}
+.message span{color:#5865f2;font-weight:bold}
+
+.inputArea{
+display:flex;padding:15px;background:#2b2d31;
+}
+.inputArea input{
+flex:1;padding:10px;border:none;border-radius:8px;
+background:#1e1f22;color:white;
+}
+.inputArea button{
+margin-left:10px;padding:10px 15px;
+border:none;border-radius:8px;
+background:#5865f2;color:white;cursor:pointer;
 }
 
-.topbar{
-height:60px;
+/* FRIENDS */
+.friends{
+width:220px;background:#2b2d31;padding:15px;
+}
+.friend{
+padding:8px;border-radius:5px;margin-bottom:5px;
+background:#1e1f22;
+}
+
+/* PROFILE */
+.profile{
+position:absolute;
+bottom:10px;left:90px;
 background:#2b2d31;
-display:flex;
-align-items:center;
-padding:0 20px;
-font-weight:bold;
+padding:8px 12px;
+border-radius:10px;
+display:flex;align-items:center;
 }
-
-.content{
-padding:20px;
+.profile img{
+width:35px;height:35px;border-radius:50%;
+margin-right:8px;
 }
 </style>
 </head>
 <body>
 
-<!-- USERNAME SCREEN -->
+<!-- USERNAME -->
 <div id="usernameModal">
 <div class="card">
-
-<img class="logo" src="https://i.imgur.com/udb7Ih7.jpeg">
-
-<label class="uploadBtn">
-<input type="file" id="profilePic" onchange="showFile(this)">
-<span id="fileText">Profil Fotoğrafı Yükle</span>
-</label>
-
-<input type="text" id="username" placeholder="Kullanıcı adı">
-
-<button onclick="saveUser()">Devam</button>
-
+<img src="https://i.imgur.com/udb7Ih7.jpeg">
+<input type="text" id="usernameInput" placeholder="Kullanıcı adı">
+<button onclick="startApp()">Başla</button>
 </div>
 </div>
 
-<!-- ANA SİSTEM -->
-<div id="mainApp">
-<div class="topbar">
-RYSU V2 - Hoşgeldin <span id="userDisplay" style="margin-left:5px;color:#5865f2;"></span>
+<!-- APP -->
+<div id="app">
+
+<div class="servers">
+<div class="server">R</div>
+<div class="server">+</div>
 </div>
-<div class="content">
-Ana ekran burası 🔥
+
+<div class="channels">
+<div class="channel"># genel</div>
+<div class="channel"># sohbet</div>
 </div>
+
+<div class="chat">
+<div class="messages" id="messages"></div>
+
+<div class="inputArea">
+<input type="text" id="messageInput" placeholder="Mesaj yaz...">
+<button onclick="sendMessage()">Gönder</button>
+</div>
+</div>
+
+<div class="friends">
+<h4>Arkadaşlar</h4>
+<div class="friend">Ali</div>
+<div class="friend">Veli</div>
+</div>
+
+</div>
+
+<!-- PROFILE -->
+<div class="profile" id="profileBox">
+<img src="https://i.imgur.com/udb7Ih7.jpeg" id="profilePic">
+<span id="profileName"></span>
 </div>
 
 <script>
-
-function showFile(input){
-if(input.files.length>0){
-document.getElementById("fileText").innerText=input.files[0].name;
-}
-}
-
-function saveUser(){
-let name=document.getElementById("username").value;
-if(!name) return alert("Kullanıcı adı gir!");
+function startApp(){
+let name=document.getElementById("usernameInput").value;
+if(!name)return alert("Kullanıcı adı gir");
 
 localStorage.setItem("username",name);
-
-let file=document.getElementById("profilePic").files[0];
-if(file){
-let reader=new FileReader();
-reader.onload=function(e){
-localStorage.setItem("profilePic",e.target.result);
-openMain();
-}
-reader.readAsDataURL(file);
-}else{
-openMain();
-}
+openApp();
 }
 
-function openMain(){
+function openApp(){
 document.getElementById("usernameModal").style.display="none";
-document.getElementById("mainApp").style.display="block";
-document.getElementById("userDisplay").innerText=localStorage.getItem("username");
+document.getElementById("app").style.display="flex";
+document.getElementById("profileName").innerText=localStorage.getItem("username");
 }
-
-/* OTOMATİK GİRİŞ */
 
 window.onload=function(){
 if(localStorage.getItem("username")){
-openMain();
+openApp();
 }
 }
 
+function sendMessage(){
+let input=document.getElementById("messageInput");
+if(!input.value)return;
+
+let div=document.createElement("div");
+div.classList.add("message");
+div.innerHTML="<span>"+localStorage.getItem("username")+":</span> "+input.value;
+
+document.getElementById("messages").appendChild(div);
+input.value="";
+}
 </script>
 
 </body>
