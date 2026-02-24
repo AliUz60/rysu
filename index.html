@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rysu V2</title>
 
+<!-- FIREBASE COMPAT -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
@@ -12,25 +13,26 @@
 <style>
 :root{
 --bg:#0b0b10;
---card:#14141c;
+--card:#151520;
 --neon:#00f2ff;
+--text:#fff;
 }
 
 body{
 margin:0;
 background:var(--bg);
 font-family:Segoe UI;
-color:white;
+color:var(--text);
 display:flex;
 height:100vh;
 overflow:hidden;
 }
 
-/* REGISTER */
+/* REGISTER SCREEN */
 #register{
 position:fixed;
 inset:0;
-background:black;
+background:#000;
 display:flex;
 align-items:center;
 justify-content:center;
@@ -44,7 +46,8 @@ border-radius:20px;
 display:flex;
 flex-direction:column;
 gap:15px;
-width:300px;
+width:320px;
+box-shadow:0 0 30px rgba(0,242,255,0.1);
 }
 
 input{
@@ -53,6 +56,7 @@ border:none;
 padding:12px;
 border-radius:12px;
 color:white;
+font-size:14px;
 }
 
 button{
@@ -62,8 +66,14 @@ padding:12px;
 border-radius:12px;
 cursor:pointer;
 font-weight:bold;
+transition:0.2s;
 }
 
+button:hover{
+filter:brightness(1.2);
+}
+
+/* CHAT */
 .chat{
 flex:1;
 display:flex;
@@ -76,13 +86,19 @@ overflow-y:auto;
 padding:20px;
 display:flex;
 flex-direction:column;
-gap:15px;
+gap:12px;
 }
 
 .msg{
-background:#14141c;
+background:var(--card);
 padding:12px;
 border-radius:15px;
+animation:fade 0.2s ease;
+}
+
+@keyframes fade{
+from{opacity:0; transform:translateY(5px);}
+to{opacity:1;}
 }
 
 .input-bar{
@@ -91,11 +107,16 @@ gap:10px;
 padding:15px;
 background:#111;
 }
+
+.file-btn{
+background:#333;
+}
 </style>
 </head>
 
 <body>
 
+<!-- REGISTER -->
 <div id="register">
 <div class="box">
 <h2>Rysu</h2>
@@ -105,112 +126,128 @@ background:#111;
 </div>
 </div>
 
+<!-- CHAT -->
 <div class="chat">
 <div class="messages" id="messages"></div>
 
 <div class="input-bar">
 <input type="text" id="msgInput" placeholder="Mesaj yaz...">
 <button onclick="sendMessage()">Gönder</button>
-<input type="file" id="fileInput">
+<input type="file" id="fileInput" style="display:none">
+<button class="file-btn" onclick="fileInput.click()">📎</button>
+<button style="background:#ff4d4d;" onclick="logout()">Çıkış</button>
 </div>
 </div>
 
 <script>
-const firebaseConfig={
-apiKey:"APIKEY",
-authDomain:"DOMAIN",
-databaseURL:"DBURL",
-projectId:"PID",
-storageBucket:"BUCKET",
-appId:"APPID"
+/* FIREBASE CONFIG */
+const firebaseConfig = {
+  apiKey: "AIzaSyCXca2LRaHFx6iZX9vhfe6lXMS9UY5nO54",
+  authDomain: "rysu-server.firebaseapp.com",
+  databaseURL: "https://rysu-server-default-rtdb.firebaseio.com",
+  projectId: "rysu-server",
+  storageBucket: "rysu-server.firebasestorage.app",
+  messagingSenderId: "253844771451",
+  appId: "1:253844771451:web:bd370ae5a93eae66fcc8de"
 };
 
 firebase.initializeApp(firebaseConfig);
-const db=firebase.database();
-const storage=firebase.storage();
+const db = firebase.database();
+const storage = firebase.storage();
 
-let currentUser=null;
+let currentUser = null;
 
 /* AUTO LOGIN */
-window.onload=()=>{
-const saved=localStorage.getItem("rysu_user");
-if(saved){
-currentUser=JSON.parse(saved);
-document.getElementById("register").style.display="none";
-listenMessages();
-}
+window.onload = () => {
+  const saved = localStorage.getItem("rysu_user");
+  if(saved){
+    currentUser = JSON.parse(saved);
+    document.getElementById("register").style.display="none";
+    listenMessages();
+  }
 };
 
 /* REGISTER */
 function registerUser(){
-const u=username.value.trim();
-const p=password.value.trim();
-if(!u||!p)return alert("Boş bırakma");
+  const u = username.value.trim();
+  const p = password.value.trim();
+  if(!u || !p) return alert("Boş bırakma");
 
-db.ref("users/"+u).once("value").then(snap=>{
-if(snap.exists()){
-alert("Bu kullanıcı adı alınmış");
-return;
-}
+  db.ref("users/"+u).once("value").then(snap=>{
+    if(snap.exists()){
+      alert("Bu kullanıcı adı alınmış");
+      return;
+    }
 
-db.ref("users/"+u).set({
-password:p,
-avatar:"",
-created:Date.now()
-});
+    db.ref("users/"+u).set({
+      password:p,
+      created:Date.now()
+    });
 
-currentUser={name:u};
-localStorage.setItem("rysu_user",JSON.stringify(currentUser));
+    currentUser = {name:u};
+    localStorage.setItem("rysu_user",JSON.stringify(currentUser));
 
-document.getElementById("register").style.display="none";
-listenMessages();
-});
+    document.getElementById("register").style.display="none";
+    listenMessages();
+  });
 }
 
 /* SEND MESSAGE */
 function sendMessage(){
-const text=msgInput.value;
-if(!text)return;
+  const text = msgInput.value;
+  if(!text) return;
 
-db.ref("messages/global").push({
-user:currentUser.name,
-text:text,
-time:Date.now()
-});
+  db.ref("messages/global").push({
+    user:currentUser.name,
+    text:text,
+    time:Date.now()
+  });
 
-msgInput.value="";
+  msgInput.value="";
 }
+
+msgInput.addEventListener("keypress",e=>{
+  if(e.key==="Enter") sendMessage();
+});
 
 /* LISTEN */
 function listenMessages(){
-db.ref("messages/global").on("value",snap=>{
-messages.innerHTML="";
-snap.forEach(m=>{
-const d=m.val();
-messages.innerHTML+=`
-<div class="msg">
-<b>${d.user}</b><br>
-${d.text}
-</div>
-`;
-});
-});
+  db.ref("messages/global").on("value",snap=>{
+    messages.innerHTML="";
+    snap.forEach(m=>{
+      const d=m.val();
+      messages.innerHTML+=`
+      <div class="msg">
+      <b>${d.user}</b><br>
+      ${d.text}
+      </div>`;
+    });
+    messages.scrollTop=messages.scrollHeight;
+  });
 }
 
 /* FILE UPLOAD */
 fileInput.addEventListener("change",e=>{
-const file=e.target.files[0];
-const ref=storage.ref("files/"+Date.now()+"_"+file.name);
+  const file=e.target.files[0];
+  if(!file) return;
 
-ref.put(file).then(s=>{
-s.ref.getDownloadURL().then(url=>{
-db.ref("messages/global").push({
-user:currentUser.name,
-text:"<a href='"+url+"' target='_blank'>Dosya</a>"
+  const ref=storage.ref("files/"+Date.now()+"_"+file.name);
+
+  ref.put(file).then(s=>{
+    s.ref.getDownloadURL().then(url=>{
+      db.ref("messages/global").push({
+        user:currentUser.name,
+        text:`<a href="${url}" target="_blank">📎 ${file.name}</a>`
+      });
+    });
+  });
 });
-});
-});
-});
+
+/* LOGOUT */
+function logout(){
+  localStorage.removeItem("rysu_user");
+  location.reload();
+}
 </script>
 
 </body>
