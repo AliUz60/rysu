@@ -5,25 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RYSU Chat</title>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js"></script>
-
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
-body{background:#1e1f22;color:white;height:100vh;display:flex;}
-
-.hidden{display:none;}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
+body{background:#1e1f22;color:white;height:100vh;display:flex}
+.hidden{display:none}
 
 #login{
-position:absolute;
+position:fixed;
 inset:0;
 display:flex;
 flex-direction:column;
 justify-content:center;
 align-items:center;
-background:#1e1f22;
 gap:20px;
+background:#1e1f22;
+z-index:10;
 }
 
 #login input{
@@ -65,12 +61,9 @@ cursor:pointer;
 font-size:20px;
 }
 
-.server:hover{background:#5865f2;}
+.server:hover{background:#5865f2}
 
-.main{
-flex:1;
-display:flex;
-}
+.main{flex:1;display:flex}
 
 .channels{
 width:220px;
@@ -80,15 +73,26 @@ display:flex;
 flex-direction:column;
 }
 
-.channels h3{
-margin-bottom:10px;
-}
-
 .chat{
 flex:1;
 display:flex;
 flex-direction:column;
 background:#313338;
+}
+
+.topbar{
+display:flex;
+justify-content:space-between;
+padding:10px;
+background:#2b2d31;
+align-items:center;
+}
+
+.friend-btn{
+background:#5865f2;
+padding:6px 12px;
+border-radius:6px;
+cursor:pointer;
 }
 
 .messages{
@@ -97,10 +101,7 @@ padding:15px;
 overflow-y:auto;
 }
 
-.message{
-margin-bottom:12px;
-}
-
+.message{margin-bottom:12px}
 .message img{
 max-width:200px;
 border-radius:8px;
@@ -112,6 +113,7 @@ display:flex;
 padding:10px;
 background:#383a40;
 gap:10px;
+align-items:center;
 }
 
 .input input{
@@ -130,22 +132,7 @@ background:#5865f2;
 color:white;
 }
 
-.topbar{
-display:flex;
-justify-content:space-between;
-padding:10px;
-background:#2b2d31;
-align-items:center;
-}
-
-.friend-btn{
-background:#5865f2;
-padding:6px 12px;
-border-radius:6px;
-cursor:pointer;
-}
-
-#fileInput{display:none;}
+#fileInput{display:none}
 </style>
 </head>
 <body>
@@ -156,7 +143,7 @@ cursor:pointer;
 <button onclick="startApp()">Başla</button>
 </div>
 
-<div id="app" class="hidden">
+<div id="app" class="hidden" style="width:100%;display:flex">
 
 <div class="sidebar">
 <div class="server" onclick="addServer()">+</div>
@@ -173,16 +160,14 @@ cursor:pointer;
 <div class="chat">
 
 <div class="topbar">
-<div id="chatTitle">Mesajlar</div>
-<div>
-<span class="friend-btn" onclick="addFriend()">+ Arkadaş</span>
-</div>
+<div id="chatTitle">Genel</div>
+<div class="friend-btn" onclick="addFriend()">+ Arkadaş</div>
 </div>
 
 <div class="messages" id="messages"></div>
 
 <div class="input">
-<label style="cursor:pointer;">📎
+<label style="cursor:pointer;font-size:20px">📎
 <input type="file" id="fileInput" accept="image/*">
 </label>
 <input id="messageInput" placeholder="Mesaj yaz...">
@@ -193,7 +178,7 @@ cursor:pointer;
 </div>
 </div>
 
-<script>
+<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
@@ -215,16 +200,16 @@ const storage = getStorage(app);
 let username="";
 let currentChat="global";
 
-function startApp(){
-username=document.getElementById("usernameInput").value;
-if(!username)return alert("Kullanıcı adı gir!");
-document.getElementById("login").classList.add("hidden");
+window.startApp=function(){
+username=document.getElementById("usernameInput").value.trim();
+if(!username){alert("Kullanıcı adı gir!");return;}
+document.getElementById("login").style.display="none";
 document.getElementById("app").classList.remove("hidden");
 loadMessages();
 }
 
-function sendMessage(imageUrl=null){
-let msg=document.getElementById("messageInput").value;
+window.sendMessage=function(imageUrl=null){
+let msg=document.getElementById("messageInput").value.trim();
 if(!msg && !imageUrl)return;
 
 push(ref(db,"messages/"+currentChat),{
@@ -239,7 +224,6 @@ document.getElementById("messageInput").value="";
 document.getElementById("fileInput").addEventListener("change",function(e){
 let file=e.target.files[0];
 if(!file)return;
-
 let storageRef=sRef(storage,"images/"+Date.now());
 uploadBytes(storageRef,file).then(snapshot=>{
 getDownloadURL(snapshot.ref).then(url=>{
@@ -267,7 +251,7 @@ messagesDiv.appendChild(div);
 });
 }
 
-function addServer(){
+window.addServer=function(){
 let name=prompt("Sunucu adı:");
 if(!name)return;
 let div=document.createElement("div");
@@ -276,7 +260,7 @@ div.innerText=name[0].toUpperCase();
 document.getElementById("serverList").appendChild(div);
 }
 
-function addFriend(){
+window.addFriend=function(){
 let name=prompt("Arkadaş kullanıcı adı:");
 if(!name)return;
 
@@ -284,11 +268,13 @@ let div=document.createElement("div");
 div.style.padding="6px";
 div.style.cursor="pointer";
 div.innerText=name;
+
 div.onclick=function(){
 currentChat="dm_"+name;
 document.getElementById("chatTitle").innerText=name;
 loadMessages();
 }
+
 document.getElementById("friendList").appendChild(div);
 }
 </script>
