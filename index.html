@@ -1,283 +1,569 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RYSU Chat</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arkadaş Sohbet · Discord Benzeri</title>
+    <!-- Firebase SDK (Realtime Database) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <!-- Font Awesome (ikonlar) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
+        }
 
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
-body{background:#1e1f22;color:white;height:100vh;display:flex}
-.hidden{display:none}
+        body {
+            height: 100vh;
+            display: flex;
+            background-color: #1e2124;
+        }
 
-#login{
-position:fixed;
-inset:0;
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-gap:20px;
-background:#1e1f22;
-z-index:10;
-}
+        .servers {
+            width: 72px;
+            background-color: #1a1c1f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 0;
+            gap: 8px;
+            overflow-y: auto;
+        }
 
-#login input{
-padding:12px;
-border:none;
-border-radius:8px;
-width:220px;
-}
+        .server-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 30px;
+            background: #2b2f33;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #d1d5da;
+            font-size: 20px;
+            font-weight: bold;
+            transition: 0.1s;
+            cursor: pointer;
+            position: relative;
+        }
 
-#login button{
-padding:12px 20px;
-border:none;
-border-radius:8px;
-cursor:pointer;
-background:#5865f2;
-color:white;
-font-weight:bold;
-}
+        .server-icon.active {
+            border-radius: 16px;
+            background: #3a6ea5;
+            color: white;
+        }
 
-.sidebar{
-width:80px;
-background:#2b2d31;
-display:flex;
-flex-direction:column;
-align-items:center;
-padding:10px;
-gap:10px;
-}
+        .server-icon:hover {
+            border-radius: 16px;
+            background: #3a6ea5;
+            color: white;
+        }
 
-.server{
-width:50px;
-height:50px;
-background:#36393f;
-border-radius:50%;
-display:flex;
-align-items:center;
-justify-content:center;
-cursor:pointer;
-font-size:20px;
-}
+        .server-icon.home {
+            background: #2f3136;
+            color: #3a6ea5;
+            font-size: 24px;
+        }
 
-.server:hover{background:#5865f2}
+        .server-divider {
+            width: 32px;
+            height: 2px;
+            background-color: #2b2f33;
+            margin: 4px 0;
+        }
 
-.main{flex:1;display:flex}
+        .channels-panel {
+            width: 240px;
+            background-color: #2b2f33;
+            display: flex;
+            flex-direction: column;
+            color: #b9bbbe;
+        }
 
-.channels{
-width:220px;
-background:#2b2d31;
-padding:10px;
-display:flex;
-flex-direction:column;
-}
+        .server-name {
+            padding: 18px 16px;
+            font-weight: 600;
+            color: #ffffff;
+            border-bottom: 1px solid #1e2124;
+            box-shadow: 0 1px 0 #2f3136;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: default;
+        }
 
-.chat{
-flex:1;
-display:flex;
-flex-direction:column;
-background:#313338;
-}
+        .server-name i {
+            color: #b9bbbe;
+            font-size: 18px;
+        }
 
-.topbar{
-display:flex;
-justify-content:space-between;
-padding:10px;
-background:#2b2d31;
-align-items:center;
-}
+        .channel-category {
+            padding: 16px 16px 4px 16px;
+            text-transform: uppercase;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: #8e9297;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
 
-.friend-btn{
-background:#5865f2;
-padding:6px 12px;
-border-radius:6px;
-cursor:pointer;
-}
+        .channel {
+            padding: 6px 16px;
+            margin: 1px 8px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #b9bbbe;
+            cursor: pointer;
+            font-size: 15px;
+        }
 
-.messages{
-flex:1;
-padding:15px;
-overflow-y:auto;
-}
+        .channel:hover {
+            background-color: #35393f;
+            color: #dcddde;
+        }
 
-.message{margin-bottom:12px}
-.message img{
-max-width:200px;
-border-radius:8px;
-margin-top:5px;
-}
+        .channel.active {
+            background-color: #3d434a;
+            color: #ffffff;
+        }
 
-.input{
-display:flex;
-padding:10px;
-background:#383a40;
-gap:10px;
-align-items:center;
-}
+        .channel i {
+            font-size: 20px;
+            width: 22px;
+            text-align: center;
+        }
 
-.input input{
-flex:1;
-padding:10px;
-border:none;
-border-radius:8px;
-}
+        .voice-channels {
+            margin-top: 16px;
+        }
 
-.input button{
-padding:10px 15px;
-border:none;
-border-radius:8px;
-cursor:pointer;
-background:#5865f2;
-color:white;
-}
+        .chat-area {
+            flex: 1;
+            background-color: #31363b;
+            display: flex;
+            flex-direction: column;
+        }
 
-#fileInput{display:none}
-</style>
+        .chat-header {
+            padding: 12px 20px;
+            background-color: #2f3338;
+            border-bottom: 1px solid #1e2124;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #ffffff;
+            font-weight: 600;
+            box-shadow: 0 1px 0 #1a1c1f;
+        }
+
+        .chat-header i {
+            color: #8e9297;
+            font-size: 20px;
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 20px;
+            background-color: #3a6ea5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            flex: 1;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .message-author {
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #8e9297;
+        }
+
+        .message-text {
+            color: #d1d5da;
+            word-wrap: break-word;
+            background-color: #2f3338;
+            padding: 8px 12px;
+            border-radius: 18px;
+            max-width: 70%;
+            border-top-left-radius: 4px;
+        }
+
+        .own-message .message-text {
+            background-color: #3a6ea5;
+            color: white;
+            border-top-left-radius: 18px;
+            border-top-right-radius: 4px;
+            margin-left: auto;
+        }
+
+        .own-message {
+            flex-direction: row-reverse;
+        }
+
+        .own-message .message-header {
+            justify-content: flex-end;
+        }
+
+        .message-input-area {
+            padding: 20px;
+            background-color: #2f3338;
+            border-top: 1px solid #1e2124;
+        }
+
+        .input-wrapper {
+            background-color: #40464b;
+            border-radius: 8px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 12px 0;
+            color: #dcddde;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .input-wrapper input::placeholder {
+            color: #7b7f85;
+        }
+
+        .input-wrapper i {
+            color: #b9bbbe;
+            font-size: 20px;
+            margin-left: 12px;
+            cursor: pointer;
+        }
+
+        .input-wrapper i:hover {
+            color: #dcddde;
+        }
+
+        .users-panel {
+            width: 200px;
+            background-color: #2b2f33;
+            padding: 16px 8px;
+            color: #b9bbbe;
+        }
+
+        .users-title {
+            text-transform: uppercase;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            padding: 0 8px 8px 8px;
+            border-bottom: 1px solid #1e2124;
+            margin-bottom: 12px;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .user-item:hover {
+            background-color: #35393f;
+        }
+
+        .user-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #3ba55d;
+        }
+
+        .user-status.offline {
+            background-color: #747f8d;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #dcddde;
+        }
+
+        .custom-logo {
+            background: #2f3136;
+            color: #e0b341;
+            font-size: 28px;
+            font-weight: 700;
+        }
+    </style>
 </head>
 <body>
+    <div class="servers">
+        <div class="server-icon home custom-logo">
+            <span>A</span>
+        </div>
+        <div class="server-divider"></div>
+        <div class="server-icon active">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="server-icon">
+            <i class="fas fa-gamepad"></i>
+        </div>
+        <div class="server-icon">
+            <i class="fas fa-music"></i>
+        </div>
+        <div class="server-icon">
+            <i class="fas fa-plus"></i>
+        </div>
+    </div>
 
-<div id="login">
-<img src="https://i.imgur.com/udb7Ih7.jpeg" width="120">
-<input id="usernameInput" placeholder="Kullanıcı adı">
-<button onclick="startApp()">Başla</button>
-</div>
+    <div class="channels-panel">
+        <div class="server-name">
+            Arkadaş Sunucusu
+            <i class="fas fa-chevron-down"></i>
+        </div>
 
-<div id="app" class="hidden" style="width:100%;display:flex">
+        <div class="channel-category">
+            METİN KANALLARI
+            <i class="fas fa-plus"></i>
+        </div>
+        <div class="channel active" data-channel="genel">
+            <i class="fas fa-hashtag"></i>
+            genel
+        </div>
+        <div class="channel" data-channel="random">
+            <i class="fas fa-hashtag"></i>
+            random
+        </div>
+        <div class="channel" data-channel="sohbet">
+            <i class="fas fa-hashtag"></i>
+            sohbet
+        </div>
 
-<div class="sidebar">
-<div class="server" onclick="addServer()">+</div>
-<div id="serverList"></div>
-</div>
+        <div class="channel-category voice-channels">
+            SES KANALLARI
+            <i class="fas fa-plus"></i>
+        </div>
+        <div class="channel">
+            <i class="fas fa-volume-up"></i>
+            Sohbet Odası
+        </div>
+        <div class="channel">
+            <i class="fas fa-volume-up"></i>
+            Oyun
+        </div>
+        <div class="channel">
+            <i class="fas fa-volume-up"></i>
+            Müzik
+        </div>
+        <div style="flex:1"></div>
+        <div style="padding: 16px; border-top: 1px solid #1e2124; display: flex; align-items: center; gap: 8px;">
+            <div style="width: 32px; height: 32px; border-radius: 16px; background: #3a6ea5; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">S</div>
+            <div style="flex:1; color: white; font-size: 14px; font-weight: 500;" id="current-username">Kullanıcı</div>
+            <i class="fas fa-microphone" style="color: #b9bbbe;"></i>
+            <i class="fas fa-headphones" style="color: #b9bbbe;"></i>
+            <i class="fas fa-cog" style="color: #b9bbbe;"></i>
+        </div>
+    </div>
 
-<div class="main">
+    <div class="chat-area">
+        <div class="chat-header">
+            <i class="fas fa-hashtag"></i>
+            <span id="current-channel">genel</span>
+        </div>
 
-<div class="channels">
-<h3>DM</h3>
-<div id="friendList"></div>
-</div>
+        <div class="messages-container" id="messages-container">
+        </div>
 
-<div class="chat">
+        <div class="message-input-area">
+            <div class="input-wrapper">
+                <input type="text" id="message-input" placeholder="Mesajınızı yazın...">
+                <i class="fas fa-paperclip"></i>
+                <i class="fas fa-smile"></i>
+                <i class="fas fa-paper-plane" id="send-button"></i>
+            </div>
+        </div>
+    </div>
 
-<div class="topbar">
-<div id="chatTitle">Genel</div>
-<div class="friend-btn" onclick="addFriend()">+ Arkadaş</div>
-</div>
+    <div class="users-panel">
+        <div class="users-title">Çevrimiçi — 5</div>
+        <div class="user-item">
+            <div class="user-status"></div>
+            <span class="user-name">Ayşe</span>
+        </div>
+        <div class="user-item">
+            <div class="user-status"></div>
+            <span class="user-name">Mehmet</span>
+        </div>
+        <div class="user-item">
+            <div class="user-status"></div>
+            <span class="user-name">Zeynep</span>
+        </div>
+        <div class="user-item">
+            <div class="user-status offline"></div>
+            <span class="user-name">Ali (çevrimdışı)</span>
+        </div>
+        <div class="user-item">
+            <div class="user-status"></div>
+            <span class="user-name">Elif</span>
+        </div>
+        <div style="margin-top: 20px;">
+            <div class="users-title">Arkadaşlar — 3</div>
+            <div class="user-item"><span class="user-name">+ Arkadaş Ekle</span></div>
+        </div>
+    </div>
 
-<div class="messages" id="messages"></div>
+    <script>
+        let username = localStorage.getItem('chat_username');
+        if (!username) {
+            username = prompt('Lütfen kullanıcı adınızı girin:', 'Arkadaş');
+            if (!username) username = 'Arkadaş';
+            localStorage.setItem('chat_username', username);
+        }
+        document.getElementById('current-username').textContent = username;
 
-<div class="input">
-<label style="cursor:pointer;font-size:20px">📎
-<input type="file" id="fileInput" accept="image/*">
-</label>
-<input id="messageInput" placeholder="Mesaj yaz...">
-<button onclick="sendMessage()">Gönder</button>
-</div>
+        let currentChannel = 'genel';
+        document.getElementById('current-channel').textContent = currentChannel;
 
-</div>
-</div>
-</div>
+        // --- KENDİ FIREBASE YAPILANDIRMANIZ ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCXca2LRaHFx6iZX9vhfe6lXMS9UY5nO54",
+            authDomain: "rysu-server.firebaseapp.com",
+            databaseURL: "https://rysu-server-default-rtdb.firebaseio.com",
+            projectId: "rysu-server",
+            storageBucket: "rysu-server.firebasestorage.app",
+            messagingSenderId: "253844771451",
+            appId: "1:253844771451:web:bd370ae5a93eae66fcc8de",
+            measurementId: "G-T632DDDX6L"
+        };
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const messagesRef = db.ref('messages');
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCXca2LRaHFx6iZX9vhfe6lXMS9UY5nO54",
-  authDomain: "rysu-server.firebaseapp.com",
-  databaseURL: "https://rysu-server-default-rtdb.firebaseio.com",
-  projectId: "rysu-server",
-  storageBucket: "rysu-server.firebasestorage.app",
-  messagingSenderId: "253844771451",
-  appId: "1:253844771451:web:bd370ae5a93eae66fcc8de"
-};
+        function loadMessages(channel) {
+            const container = document.getElementById('messages-container');
+            container.innerHTML = '';
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const storage = getStorage(app);
+            messagesRef.orderByChild('channel').equalTo(channel).on('child_added', (snapshot) => {
+                const msg = snapshot.val();
+                appendMessage(msg, snapshot.key);
+            });
+        }
 
-let username="";
-let currentChat="global";
+        function appendMessage(msg, key) {
+            const container = document.getElementById('messages-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            if (msg.username === username) {
+                messageDiv.classList.add('own-message');
+            }
+            messageDiv.setAttribute('data-key', key);
 
-window.startApp=function(){
-username=document.getElementById("usernameInput").value.trim();
-if(!username){alert("Kullanıcı adı gir!");return;}
-document.getElementById("login").style.display="none";
-document.getElementById("app").classList.remove("hidden");
-loadMessages();
-}
+            const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '';
+            const avatarLetter = msg.username ? msg.username.charAt(0).toUpperCase() : '?';
 
-window.sendMessage=function(imageUrl=null){
-let msg=document.getElementById("messageInput").value.trim();
-if(!msg && !imageUrl)return;
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatarLetter}</div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-author">${escapeHtml(msg.username)}</span>
+                        <span class="message-time">${time}</span>
+                    </div>
+                    <div class="message-text">${escapeHtml(msg.text)}</div>
+                </div>
+            `;
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
 
-push(ref(db,"messages/"+currentChat),{
-user:username,
-text:msg,
-image:imageUrl||null
-});
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
 
-document.getElementById("messageInput").value="";
-}
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            if (text === '') return;
 
-document.getElementById("fileInput").addEventListener("change",function(e){
-let file=e.target.files[0];
-if(!file)return;
-let storageRef=sRef(storage,"images/"+Date.now());
-uploadBytes(storageRef,file).then(snapshot=>{
-getDownloadURL(snapshot.ref).then(url=>{
-sendMessage(url);
-});
-});
-});
+            const message = {
+                username: username,
+                text: text,
+                timestamp: Date.now(),
+                channel: currentChannel
+            };
 
-function loadMessages(){
-onValue(ref(db,"messages/"+currentChat),(snapshot)=>{
-let messagesDiv=document.getElementById("messages");
-messagesDiv.innerHTML="";
-snapshot.forEach(child=>{
-let data=child.val();
-let div=document.createElement("div");
-div.className="message";
-div.innerHTML="<b>"+data.user+"</b>: "+(data.text||"");
-if(data.image){
-let img=document.createElement("img");
-img.src=data.image;
-div.appendChild(img);
-}
-messagesDiv.appendChild(div);
-});
-});
-}
+            messagesRef.push(message);
+            input.value = '';
+        }
 
-window.addServer=function(){
-let name=prompt("Sunucu adı:");
-if(!name)return;
-let div=document.createElement("div");
-div.className="server";
-div.innerText=name[0].toUpperCase();
-document.getElementById("serverList").appendChild(div);
-}
+        document.querySelectorAll('.channel').forEach(channelEl => {
+            channelEl.addEventListener('click', function(e) {
+                document.querySelectorAll('.channel').forEach(ch => ch.classList.remove('active'));
+                this.classList.add('active');
+                const newChannel = this.getAttribute('data-channel');
+                if (newChannel) {
+                    currentChannel = newChannel;
+                    document.getElementById('current-channel').textContent = currentChannel;
+                    messagesRef.off();
+                    loadMessages(currentChannel);
+                }
+            });
+        });
 
-window.addFriend=function(){
-let name=prompt("Arkadaş kullanıcı adı:");
-if(!name)return;
+        document.getElementById('send-button').addEventListener('click', sendMessage);
+        document.getElementById('message-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
 
-let div=document.createElement("div");
-div.style.padding="6px";
-div.style.cursor="pointer";
-div.innerText=name;
-
-div.onclick=function(){
-currentChat="dm_"+name;
-document.getElementById("chatTitle").innerText=name;
-loadMessages();
-}
-
-document.getElementById("friendList").appendChild(div);
-}
-</script>
-
+        loadMessages(currentChannel);
+    </script>
 </body>
 </html>
