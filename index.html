@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ryu | Sohbet</title>
+    <style>
+        /* CSS - Görünüm Ayarları */
+        :root {
+            --bg-darkest: #1e1f22;   /* Sunucu listesi */
+            --bg-sidebar: #2b2d31;   /* Kanal listesi */
+            --bg-chat: #313338;      /* Mesaj alanı */
+            --text-main: #dbdee1;
+            --text-muted: #949ba4;
+            --accent: #5865f2;       /* Ryu/Discord Mavisi */
+            --input-bg: #383a40;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'gg sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-chat);
+            color: var(--text-main);
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sol Sunucu Barı */
+        .servers {
+            width: 72px;
+            background-color: var(--bg-darkest);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 12px;
+            flex-shrink: 0;
+        }
+
+        .server-icon {
+            width: 48px;
+            height: 48px;
+            background-color: var(--bg-chat);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            color: white;
+            font-weight: bold;
+        }
+
+        .server-icon:hover {
+            border-radius: 15px;
+            background-color: var(--accent);
+        }
+
+        .server-icon.active {
+            border-radius: 15px;
+            background-color: var(--accent);
+        }
+
+        /* Yan Menü (Kanallar) */
+        .sidebar {
+            width: 240px;
+            background-color: var(--bg-sidebar);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            height: 48px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+            font-size: 16px;
+        }
+
+        .channel-list {
+            padding: 10px 8px;
+            flex: 1;
+        }
+
+        .channel-item {
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            margin-bottom: 2px;
+        }
+
+        .channel-item:hover {
+            background-color: #3f4147;
+            color: var(--text-main);
+        }
+
+        .channel-item.active {
+            background-color: #3f4147;
+            color: white;
+        }
+
+        /* Ana Sohbet Alanı */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            height: 48px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+            font-weight: bold;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            display: flex;
+            gap: 15px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #5865f2;
+            flex-shrink: 0;
+        }
+
+        .msg-info b { color: white; margin-right: 5px; }
+        .msg-info span { font-size: 12px; color: var(--text-muted); }
+        .msg-text { margin-top: 4px; line-height: 1.4; }
+
+        /* Mesaj Giriş Kutusu */
+        .input-area {
+            padding: 0 20px 24px 20px;
+        }
+
+        .input-container {
+            background-color: var(--input-bg);
+            border-radius: 8px;
+            padding: 11px 16px;
+            display: flex;
+        }
+
+        input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            outline: none;
+            font-size: 16px;
+        }
+
+        /* Mobilde yan menüleri gizle */
+        @media (max-width: 768px) {
+            .servers, .sidebar { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="servers">
+        <div class="server-icon active" title="Ryu">R</div>
+        <div style="width: 32px; height: 2px; background: #35363c; margin-bottom: 8px;"></div>
+        <div class="server-icon">+</div>
+    </div>
+
+    <div class="sidebar">
+        <div class="sidebar-header">RYU TOPLULUĞU</div>
+        <div class="channel-list">
+            <div class="channel-item active"># genel-sohbet</div>
+            <div class="channel-item"># duyurular</div>
+            <div class="channel-item"># oyun-odası</div>
+        </div>
+    </div>
+
+    <div class="chat-area">
+        <div class="chat-header"># genel-sohbet</div>
+        
+        <div class="messages" id="messageContainer">
+            <div class="message">
+                <div class="avatar" style="background-color: #ed4245;"></div>
+                <div class="msg-info">
+                    <b>Ryu Bot</b> <span>Bugün 16:00</span>
+                    <div class="msg-text">Selam! Ryu'ya hoş geldin. Burası senin yeni dünyan. Alt taraftan mesaj yazarak başlayabilirsin!</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-container">
+                <input type="text" id="messageInput" placeholder="#genel-sohbet kanalına mesaj gönder">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* JavaScript - Mesaj Gönderme Mantığı */
+        const input = document.getElementById('messageInput');
+        const container = document.getElementById('messageContainer');
+
+        input.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && this.value.trim() !== "") {
+                const messageText = this.value;
+                
+                // Mesaj HTML'i oluştur
+                const now = new Date();
+                const time = now.getHours() + ":" + now.getMinutes().toString().padStart(2, '0');
+
+                const newMessage = `
+                    <div class="message">
+                        <div class="avatar"></div>
+                        <div class="msg-info">
+                            <b>Sen (Admin)</b> <span>Bugün ${time}</span>
+                            <div class="msg-text">${messageText}</div>
+                        </div>
+                    </div>
+                `;
+
+                // Ekrana ekle
+                container.innerHTML += newMessage;
+                
+                // Girdiyi temizle ve aşağı kaydır
+                this.value = "";
+                container.scrollTop = container.scrollHeight;
+            }
+        });
+    </script>
+
+</body>
+</html>
