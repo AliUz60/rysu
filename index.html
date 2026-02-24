@@ -3,189 +3,266 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RYSU V2</title>
+<title>RYSU</title>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI;}
-body{background:#1e1f22;color:white;height:100vh;overflow:hidden}
-
-/* USERNAME MODAL */
-#usernameModal{
-position:fixed;inset:0;
-background:#111214;
-display:flex;justify-content:center;align-items:center;
-z-index:1000;
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Segoe UI, sans-serif;
 }
+
+body{
+    background:#0f1117;
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
 .card{
-background:#2b2d31;
-padding:40px;
-border-radius:20px;
-width:350px;
-text-align:center;
-}
-.card img{width:150px;margin-bottom:20px}
-.card input{
-width:100%;padding:12px;border:none;border-radius:10px;
-background:#1e1f22;color:white;margin-bottom:15px;
-}
-.card button{
-width:100%;padding:12px;border:none;border-radius:10px;
-background:#5865f2;color:white;cursor:pointer;
+    width:380px;
+    background:#1a1d26;
+    padding:30px;
+    border-radius:20px;
+    box-shadow:0 0 40px rgba(0,0,0,0.6);
 }
 
-/* MAIN LAYOUT */
-#app{display:none;height:100vh;display:flex}
-
-/* SERVERS */
-.servers{
-width:70px;background:#111214;
-display:flex;flex-direction:column;align-items:center;padding-top:10px;
-}
-.server{
-width:50px;height:50px;border-radius:50%;
-background:#2b2d31;margin-bottom:10px;
-display:flex;justify-content:center;align-items:center;
-cursor:pointer;
+.logo{
+    text-align:center;
+    margin-bottom:25px;
 }
 
-/* CHANNELS */
-.channels{
-width:220px;background:#2b2d31;padding:15px;
-display:flex;flex-direction:column;
-}
-.channel{
-padding:8px;border-radius:5px;margin-bottom:5px;
-cursor:pointer;color:#ccc;
-}
-.channel:hover{background:#3f4147}
-
-/* CHAT */
-.chat{
-flex:1;display:flex;flex-direction:column;
-background:#313338;
-}
-.messages{
-flex:1;padding:20px;overflow-y:auto;
-}
-.message{margin-bottom:10px}
-.message span{color:#5865f2;font-weight:bold}
-
-.inputArea{
-display:flex;padding:15px;background:#2b2d31;
-}
-.inputArea input{
-flex:1;padding:10px;border:none;border-radius:8px;
-background:#1e1f22;color:white;
-}
-.inputArea button{
-margin-left:10px;padding:10px 15px;
-border:none;border-radius:8px;
-background:#5865f2;color:white;cursor:pointer;
+.logo img{
+    width:120px;
+    filter:none;
 }
 
-/* FRIENDS */
-.friends{
-width:220px;background:#2b2d31;padding:15px;
-}
-.friend{
-padding:8px;border-radius:5px;margin-bottom:5px;
-background:#1e1f22;
+input, button{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:12px;
+    margin-top:10px;
+    font-size:15px;
 }
 
-/* PROFILE */
-.profile{
-position:absolute;
-bottom:10px;left:90px;
-background:#2b2d31;
-padding:8px 12px;
-border-radius:10px;
-display:flex;align-items:center;
+input{
+    background:#2a2f3d;
+    color:white;
 }
-.profile img{
-width:35px;height:35px;border-radius:50%;
-margin-right:8px;
+
+button{
+    background:linear-gradient(45deg,#5c6cff,#7a4bff);
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+button:hover{
+    transform:scale(1.05);
+}
+
+.section{
+    display:none;
+}
+
+.list{
+    max-height:150px;
+    overflow-y:auto;
+    margin-top:10px;
+    background:#2a2f3d;
+    padding:10px;
+    border-radius:10px;
+}
+
+.list div{
+    padding:6px;
+    background:#1e2230;
+    margin-top:5px;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.msg-box{
+    max-height:120px;
+    overflow-y:auto;
+    background:#2a2f3d;
+    padding:10px;
+    border-radius:10px;
+    margin-top:10px;
+}
+
+.msg{
+    background:#1e2230;
+    padding:6px;
+    margin-top:5px;
+    border-radius:6px;
+    font-size:13px;
 }
 </style>
 </head>
+
 <body>
 
-<!-- USERNAME -->
-<div id="usernameModal">
 <div class="card">
+
+<!-- LOGIN -->
+<div id="login">
+<div class="logo">
 <img src="https://i.imgur.com/udb7Ih7.jpeg">
-<input type="text" id="usernameInput" placeholder="Kullanıcı adı">
+</div>
+
+<input type="text" id="username" placeholder="Kullanıcı adı">
 <button onclick="startApp()">Başla</button>
 </div>
+
+<!-- MAIN -->
+<div id="main" class="section">
+
+<h3>Sunucu Oluştur</h3>
+<input type="text" id="serverName" placeholder="Sunucu adı">
+<button onclick="createServer()">Oluştur</button>
+
+<h3 style="margin-top:15px;">Sunucular</h3>
+<div id="serverList" class="list"></div>
+
+<hr style="margin:15px 0; border:1px solid #333;">
+
+<h3>Arkadaş Ekle</h3>
+<input type="text" id="friendName" placeholder="Kullanıcı adı">
+<button onclick="addFriend()">Ekle</button>
+
+<h3 style="margin-top:15px;">Arkadaşlar</h3>
+<div id="friendList" class="list"></div>
+
 </div>
 
-<!-- APP -->
-<div id="app">
+<!-- DM -->
+<div id="dmSection" class="section">
+<h3 id="dmTitle"></h3>
 
-<div class="servers">
-<div class="server">R</div>
-<div class="server">+</div>
-</div>
+<div id="messages" class="msg-box"></div>
 
-<div class="channels">
-<div class="channel"># genel</div>
-<div class="channel"># sohbet</div>
-</div>
-
-<div class="chat">
-<div class="messages" id="messages"></div>
-
-<div class="inputArea">
-<input type="text" id="messageInput" placeholder="Mesaj yaz...">
+<input type="text" id="dmInput" placeholder="Mesaj yaz...">
 <button onclick="sendMessage()">Gönder</button>
-</div>
-</div>
-
-<div class="friends">
-<h4>Arkadaşlar</h4>
-<div class="friend">Ali</div>
-<div class="friend">Veli</div>
+<button onclick="back()">Geri</button>
 </div>
 
-</div>
-
-<!-- PROFILE -->
-<div class="profile" id="profileBox">
-<img src="https://i.imgur.com/udb7Ih7.jpeg" id="profilePic">
-<span id="profileName"></span>
 </div>
 
 <script>
+
+let currentUser = "";
+let currentDM = "";
+
 function startApp(){
-let name=document.getElementById("usernameInput").value;
-if(!name)return alert("Kullanıcı adı gir");
+    let name = document.getElementById("username").value;
+    if(name.trim()=="") return alert("Kullanıcı adı gir!");
+    currentUser = name;
 
-localStorage.setItem("username",name);
-openApp();
+    localStorage.setItem("currentUser", name);
+
+    document.getElementById("login").style.display="none";
+    document.getElementById("main").style.display="block";
+
+    loadServers();
+    loadFriends();
 }
 
-function openApp(){
-document.getElementById("usernameModal").style.display="none";
-document.getElementById("app").style.display="flex";
-document.getElementById("profileName").innerText=localStorage.getItem("username");
+function createServer(){
+    let name = document.getElementById("serverName").value;
+    if(name.trim()=="") return;
+
+    let servers = JSON.parse(localStorage.getItem("servers")) || [];
+    servers.push(name);
+    localStorage.setItem("servers", JSON.stringify(servers));
+
+    loadServers();
 }
 
-window.onload=function(){
-if(localStorage.getItem("username")){
-openApp();
+function loadServers(){
+    let list = document.getElementById("serverList");
+    list.innerHTML="";
+
+    let servers = JSON.parse(localStorage.getItem("servers")) || [];
+
+    servers.forEach(s=>{
+        let div = document.createElement("div");
+        div.innerText = s;
+        list.appendChild(div);
+    });
 }
+
+function addFriend(){
+    let name = document.getElementById("friendName").value;
+    if(name.trim()=="") return;
+
+    let friends = JSON.parse(localStorage.getItem(currentUser+"_friends")) || [];
+    if(!friends.includes(name)){
+        friends.push(name);
+        localStorage.setItem(currentUser+"_friends", JSON.stringify(friends));
+    }
+
+    loadFriends();
+}
+
+function loadFriends(){
+    let list = document.getElementById("friendList");
+    list.innerHTML="";
+
+    let friends = JSON.parse(localStorage.getItem(currentUser+"_friends")) || [];
+
+    friends.forEach(f=>{
+        let div = document.createElement("div");
+        div.innerText = f;
+        div.onclick = ()=> openDM(f);
+        list.appendChild(div);
+    });
+}
+
+function openDM(friend){
+    currentDM = friend;
+    document.getElementById("main").style.display="none";
+    document.getElementById("dmSection").style.display="block";
+    document.getElementById("dmTitle").innerText="DM - "+friend;
+    loadMessages();
+}
+
+function loadMessages(){
+    let box = document.getElementById("messages");
+    box.innerHTML="";
+
+    let msgs = JSON.parse(localStorage.getItem(currentUser+"_dm_"+currentDM)) || [];
+
+    msgs.forEach(m=>{
+        let div = document.createElement("div");
+        div.className="msg";
+        div.innerText=m;
+        box.appendChild(div);
+    });
 }
 
 function sendMessage(){
-let input=document.getElementById("messageInput");
-if(!input.value)return;
+    let text = document.getElementById("dmInput").value;
+    if(text.trim()=="") return;
 
-let div=document.createElement("div");
-div.classList.add("message");
-div.innerHTML="<span>"+localStorage.getItem("username")+":</span> "+input.value;
+    let msgs = JSON.parse(localStorage.getItem(currentUser+"_dm_"+currentDM)) || [];
+    msgs.push(currentUser+": "+text);
+    localStorage.setItem(currentUser+"_dm_"+currentDM, JSON.stringify(msgs));
 
-document.getElementById("messages").appendChild(div);
-input.value="";
+    document.getElementById("dmInput").value="";
+    loadMessages();
 }
+
+function back(){
+    document.getElementById("dmSection").style.display="none";
+    document.getElementById("main").style.display="block";
+}
+
 </script>
 
 </body>
